@@ -490,7 +490,7 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
 // ═══════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3QifaXBGJHbQ4Nzyomwv0zghS2bgHUFDA0NXkxVkGRRIjiXpcDTSEcShTgx4qx5s9/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrRKuubyOyLD8ooLjZt4YR_ai9hrpAA951PMurYHEtXmTzuy3kny_SSrDxVGTWtqyh/exec";
 
 const STAGES = ["Profiles Shared","L1 Scheduled","L1 Cleared","L2 Scheduled","L2 Cleared","Offer Extended","Onboarded","Screen Rejected","L1 Rejected","L2 Rejected","Hold","Dropped"];
 const ACTIVE_STAGES = ["Profiles Shared","L1 Scheduled","L1 Cleared","L2 Scheduled","L2 Cleared","Offer Extended","Onboarded"];
@@ -534,7 +534,13 @@ window.onload = () => {
     opt.value=s; opt.textContent=s;
     document.getElementById("cStage").appendChild(opt);
   });
-  loadDataForLogin();
+  // Show login immediately with default Admin — never block on network
+  spocs = [{ ID:"SPOC-001", Name:"Admin", Email:"", Phone:"", Permission:"ReadWrite", PIN:"1234", Active:"Yes" }];
+  domains = [{ ID:"DOM-001", Name:"Digital", Active:"Yes"}, {ID:"DOM-002", Name:"Embedded", Active:"Yes"}];
+  populateLoginSpocs();
+  hideLoad();
+  // Silently try to load real SPOCs from Google Sheets in background
+  fetchSpocsBackground();
 };
 
 function today(){ return new Date().toISOString().split("T")[0]; }
@@ -562,29 +568,59 @@ function calcYearsInCATVal(doj){
 // API
 // ═══════════════════════════════════════════════════════════
 async function api(method, body){
-  const TO = 20000;
+  const TO = 25000;
   const race = p => Promise.race([p, new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),TO))]);
   if(method==="GET"){
-    const res = await race(fetch(SCRIPT_URL+"?action=getAll&t="+Date.now(),{redirect:"follow"}));
-    return res.json();
+    // Try normal fetch first, fallback to no-cors workaround
+    try {
+      const res = await race(fetch(SCRIPT_URL+"?action=getAll&t="+Date.now(), {redirect:"follow"}));
+      const text = await res.text();
+      return JSON.parse(text);
+    } catch(e) {
+      // Try JSONP as fallback
+      return await jsonpFetch("getAll");
+    }
   } else {
-    const res = await race(fetch(SCRIPT_URL,{method:"POST",redirect:"follow",headers:{"Content-Type":"text/plain"},body:JSON.stringify(body)}));
-    return res.json();
+    const res = await race(fetch(SCRIPT_URL, {
+      method:"POST", redirect:"follow",
+      headers:{"Content-Type":"text/plain"},
+      body:JSON.stringify(body)
+    }));
+    const text = await res.text();
+    return JSON.parse(text);
+  }
+}
+
+function jsonpFetch(action){
+  return new Promise((resolve, reject) => {
+    const cb = "cb_"+Date.now();
+    const script = document.createElement("script");
+    const timer = setTimeout(()=>{ delete window[cb]; script.remove(); reject(new Error("JSONP timeout")); }, 12000);
+    window[cb] = (data) => { clearTimeout(timer); delete window[cb]; script.remove(); resolve(data); };
+    script.src = SCRIPT_URL+"?action="+action+"&callback="+cb+"&t="+Date.now();
+    script.onerror = ()=>{ clearTimeout(timer); reject(new Error("Script error")); };
+    document.head.appendChild(script);
+  });
+}
+
+async function fetchSpocsBackground(){
+  // Try to silently load SPOCs from Google Sheets — don't block login
+  try {
+    const ctrl = new AbortController();
+    setTimeout(()=>ctrl.abort(), 8000);
+    const res = await fetch(SCRIPT_URL+"?action=getAll&t="+Date.now(), {redirect:"follow", signal:ctrl.signal});
+    const data = await res.json();
+    if(data && data.spocs && data.spocs.length>0){
+      applyData(data);
+      populateLoginSpocs(); // refresh dropdown with real SPOCs
+    }
+  } catch(e) {
+    // Silently fail — login still works with default Admin
   }
 }
 
 async function loadDataForLogin(){
-  showLoad("Loading…");
-  try {
-    const data = await api("GET");
-    applyData(data);
-    populateLoginSpocs();
-  } catch(e) {
-    // offline mode — use empty data
-    spocs = [{ ID:"SPOC-001", Name:"Admin", Email:"admin@ggs.com", Phone:"", Permission:"ReadWrite", PIN:"1234", Active:"Yes" }];
-    domains = [{ ID:"DOM-001", Name:"Digital", Active:"Yes"}, {ID:"DOM-002", Name:"Embedded", Active:"Yes"}];
-    populateLoginSpocs();
-  } finally { hideLoad(); }
+  // No longer used for blocking load
 }
 
 async function loadData(){
