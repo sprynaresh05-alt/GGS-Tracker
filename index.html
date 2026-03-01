@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>GGS Recruitment Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1a2b5f;--blue:#2a52be;--accent:#e8f0ff;--white:#fff;
+  --bg:#f0f4ff;--border:#d0dcf5;--text:#1e2d5a;--muted:#6b7db3;
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;--orange:#f97316;
+  --purple:#8b5cf6;--cyan:#06b6d4;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
+.app{min-height:100vh;display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+.header{background:var(--navy);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:62px;box-shadow:0 2px 12px rgba(26,43,95,.35);position:sticky;top:0;z-index:100}
+.logo-area{display:flex;align-items:center;gap:12px}
+.logo-badge{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:21px;letter-spacing:3px;color:#fff;background:var(--blue);padding:5px 13px;border-radius:6px;border:2px solid rgba(255,255,255,.22)}
+.app-title{font-weight:600;font-size:16px;color:rgba(255,255,255,.92)}
+.app-sub{color:rgba(255,255,255,.42);font-size:11px}
+.header-right{display:flex;align-items:center;gap:10px}
+.user-chip{background:rgba(255,255,255,.15);border-radius:20px;padding:4px 12px;font-size:12px;color:#fff;display:flex;align-items:center;gap:6px}
+.user-dot{width:8px;height:8px;border-radius:50%;background:#10b981}
+.sync-btn{background:rgba(255,255,255,.12);border:none;color:#fff;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;transition:background .2s}
+.sync-btn:hover{background:rgba(255,255,255,.22)}
+.sync-btn.spinning span{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.notif-btn{position:relative;background:rgba(255,255,255,.12);border:none;color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.notif-btn:hover{background:rgba(255,255,255,.22)}
+.notif-badge{position:absolute;top:-3px;right:-3px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+
+/* ── NAV ── */
+.nav{background:var(--white);border-bottom:2px solid var(--border);display:flex;padding:0 20px;overflow-x:auto}
+.nav-btn{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:13px 16px;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap}
+.nav-btn:hover{color:var(--blue)}
+.nav-btn.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+
+/* ── MAIN ── */
+.main{flex:1;padding:22px 24px}
+
+/* ── LOGIN ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.login-card{background:#fff;border-radius:16px;padding:40px;width:360px;box-shadow:0 8px 40px rgba(26,43,95,.15);text-align:center}
+.login-logo{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:32px;letter-spacing:4px;color:#fff;background:var(--blue);padding:10px 20px;border-radius:10px;display:inline-block;margin-bottom:20px}
+.login-title{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:28px}
+.login-select{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;margin-bottom:14px}
+.login-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-size:18px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);outline:none;text-align:center;letter-spacing:8px;margin-bottom:18px}
+.login-input:focus{border-color:var(--blue)}
+.login-btn{width:100%;padding:12px;border-radius:10px;background:var(--blue);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s}
+.login-btn:hover{background:var(--navy)}
+.login-err{color:var(--danger);font-size:12px;margin-top:10px}
+
+/* ── LOADING ── */
+.loading-overlay{position:fixed;inset:0;background:rgba(26,43,95,.7);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.loading-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+.loading-text{color:#fff;font-size:14px;font-weight:500}
+
+/* ── TOAST ── */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:998;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.2);animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.toast.success{background:#10b981}.toast.error{background:#ef4444}.toast.info{background:#3b82f6}.toast.warning{background:#f59e0b}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:20px}
+.stat-card{background:#fff;border-radius:12px;padding:18px 20px;border:1px solid var(--border);display:flex;flex-direction:column;gap:5px;box-shadow:0 1px 4px rgba(26,43,95,.07);transition:transform .15s,box-shadow .15s;cursor:default}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(26,43,95,.12)}
+.stat-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.stat-value{font-size:28px;font-weight:700;color:var(--navy);line-height:1}
+.stat-sub{font-size:11px;color:var(--muted)}
+.stat-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-top:2px}
+
+/* ── CHART ── */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-card{background:#fff;border-radius:12px;padding:20px;border:1px solid var(--border);box-shadow:0 1px 4px rgba(26,43,95,.07)}
+.chart-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.bar-label{width:120px;font-size:11px;color:var(--muted);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.bar-track{flex:1;height:20px;background:var(--accent);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;font-size:10px;font-weight:700;color:#fff;min-width:20px;transition:width .6s ease}
+
+/* ── SECTION CARDS ── */
+.section-card{background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 4px rgba(26,43,95,.07);margin-bottom:20px}
+.section-card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.section-card-title{font-size:13px;font-weight:700;color:var(--text)}
+
+/* ── FILTERS ── */
+.filters-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;border-radius:10px;padding:12px 16px;border:1px solid var(--border);margin-bottom:14px}
+.search-input{flex:1;min-width:180px;border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;color:var(--text);background:var(--bg);transition:border-color .2s}
+.search-input:focus{border-color:var(--blue)}
+.filter-select{border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--bg);cursor:pointer;outline:none}
+
+/* ── BUTTONS ── */
+.btn{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:var(--navy)}
+.btn-success{background:#10b981;color:#fff}.btn-success:hover{background:#059669}
+.btn-ghost{background:var(--accent);color:var(--blue);border:1.5px solid var(--border)}.btn-ghost:hover{background:var(--border)}
+.btn-danger{background:#fef2f2;color:var(--danger);border:1.5px solid #fca5a5}.btn-danger:hover{background:#fee2e2}
+.btn-warning{background:#fff7ed;color:#92400e;border:1.5px solid #fed7aa}.btn-warning:hover{background:#ffedd5}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse}
+thead tr{background:#f8faff}
+th{padding:10px 14px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:10px 14px;font-size:12.5px;color:var(--text);border-bottom:1px solid #f0f4ff;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafcff}
+.tag{display:inline-block;padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:600}
+.tag-digital{background:#dbeafe;color:#1e40af}.tag-embedded{background:#fce7f3;color:#9d174d}
+.tag-open{background:#fef3c7;color:#92400e}.tag-closed{background:#d1fae5;color:#065f46}
+.tag-active{background:#d1fae5;color:#065f46}.tag-resigned{background:#fee2e2;color:#991b1b}
+.tag-terminated{background:#f3f4f6;color:#374151}.tag-relieved{background:#fef3c7;color:#92400e}
+.tag-onsite{background:#dbeafe;color:#1e40af}.tag-offsite{background:#ede9fe;color:#5b21b6}
+.stage-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:10px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+tr.stale-row td:first-child{border-left:3px solid var(--danger)}
+
+/* ── DETAIL PANEL ── */
+.detail-overlay{position:fixed;inset:0;background:rgba(10,20,60,.55);z-index:200;display:flex;align-items:flex-start;justify-content:flex-end;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.detail-panel{background:#fff;width:600px;max-width:96vw;height:100vh;overflow-y:auto;box-shadow:-8px 0 40px rgba(26,43,95,.18);display:flex;flex-direction:column;animation:slideIn .25s ease}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.detail-header{background:var(--navy);padding:20px 22px;display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;z-index:10}
+.detail-title{color:#fff;font-size:16px;font-weight:700}
+.detail-meta{color:rgba(255,255,255,.55);font-size:12px;margin-top:3px}
+.close-btn{background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.close-btn:hover{background:rgba(255,255,255,.25)}
+.detail-body{padding:20px 22px;flex:1}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:18px}
+.info-box{background:var(--bg);border-radius:8px;padding:11px 13px;border:1px solid var(--border)}
+.info-box-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+.info-box-value{font-size:13px;font-weight:600;color:var(--text)}
+.pipeline-steps{display:flex;gap:3px;margin-bottom:14px;flex-wrap:wrap}
+.pipeline-step{flex:1;min-width:50px;padding:5px 3px;border-radius:5px;text-align:center;font-size:9px;font-weight:600;color:var(--muted);background:#f0f4ff}
+.pipeline-step.active{color:#fff}
+.sec-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.cand-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:13px 15px;margin-bottom:9px}
+.cand-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px}
+.cand-name{font-size:13.5px;font-weight:700;color:var(--navy)}
+.meta-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.meta-chip{background:#fff;border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-size:11px;color:var(--muted)}
+.stage-sel{border:1.5px solid var(--border);border-radius:7px;padding:5px 9px;font-size:11.5px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;cursor:pointer;outline:none}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,20,60,.5);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:#fff;border-radius:14px;padding:26px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(26,43,95,.25)}
+.modal-lg{max-width:680px}
+.modal-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:18px}
+.form-group{margin-bottom:12px}
+.form-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:block}
+.form-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:8px 11px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .2s;background:var(--bg)}
+.form-input:focus{border-color:var(--blue);background:#fff}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.conditional-section{background:var(--bg);border-radius:10px;padding:14px;border:1px solid var(--border);margin-top:10px}
+.conditional-title{font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+
+/* ── NOTIF PANEL ── */
+.notif-panel{position:absolute;top:52px;right:0;width:340px;max-height:460px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(26,43,95,.18);border:1px solid var(--border);overflow:hidden;z-index:200;animation:fadeIn .15s ease}
+.notif-panel-header{padding:12px 15px;background:var(--navy);color:#fff;font-weight:600;font-size:12.5px}
+.notif-list{max-height:390px;overflow-y:auto}
+.notif-item{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;gap:9px;cursor:pointer;transition:background .15s}
+.notif-item:hover{background:#f8faff}.notif-item:last-child{border-bottom:none}
+.notif-text{font-size:12px;color:var(--text);line-height:1.5}
+.notif-days{font-size:10.5px;color:var(--danger);font-weight:700;margin-top:2px}
+
+/* ── PIPELINE TAB ── */
+.pipeline-stage-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.pipeline-stage-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .2s}
+.pipeline-stage-tab.active{color:#fff}
+.pipeline-summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:16px}
+.pipeline-summary-card{background:#fff;border-radius:10px;padding:12px 14px;border:1px solid var(--border);text-align:center}
+.pipeline-summary-val{font-size:22px;font-weight:700;color:var(--navy)}
+.pipeline-summary-label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* ── ADMIN TAB ── */
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.admin-card{background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 4px rgba(26,43,95,.07)}
+.admin-card-header{background:var(--navy);padding:14px 18px;color:#fff;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.admin-card-body{padding:16px 18px}
+.spoc-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.spoc-row:last-child{border-bottom:none}
+.spoc-info{display:flex;flex-direction:column;gap:2px}
+.spoc-name{font-size:13px;font-weight:600;color:var(--navy)}
+.spoc-detail{font-size:11px;color:var(--muted)}
+.permission-badge{padding:2px 9px;border-radius:10px;font-size:10.5px;font-weight:700}
+.perm-rw{background:#d1fae5;color:#065f46}.perm-r{background:#dbeafe;color:#1e40af}
+
+/* ── SPOC METRICS ── */
+.spoc-metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:20px}
+.spoc-metric-card{background:#fff;border-radius:12px;border:1px solid var(--border);padding:18px;box-shadow:0 1px 4px rgba(26,43,95,.07)}
+.spoc-metric-name{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.spoc-metric-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f0f4ff;font-size:12px}
+.spoc-metric-row:last-child{border-bottom:none}
+.spoc-metric-val{font-weight:700;color:var(--navy)}
+
+/* ── QUARTER FILTER ── */
+.quarter-filter{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;background:#fff;padding:12px 16px;border-radius:10px;border:1px solid var(--border)}
+.quarter-btn{padding:5px 14px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);transition:all .2s}
+.quarter-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* ── JD POPUP ── */
+.jd-popup{background:#fff;border-radius:14px;padding:28px;width:100%;max-width:600px;box-shadow:0 20px 60px rgba(26,43,95,.25);max-height:80vh;overflow-y:auto}
+.jd-content{font-size:13.5px;line-height:1.8;color:var(--text);white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:16px;border:1px solid var(--border);margin-top:14px}
+
+/* ── MISC ── */
+.alert-banner{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:11px 15px;margin-bottom:14px;display:flex;align-items:center;gap:9px;font-size:12.5px;color:#92400e}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-icon{font-size:36px;margin-bottom:9px}
+.empty-text{font-size:13px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+@media(max-width:700px){.chart-row,.admin-grid,.form-row,.form-row-3{grid-template-columns:1fr}.detail-panel{width:100vw}.main{padding:14px}.stats-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="login-logo">GGS</div>
+    <div class="login-title">Recruitment Tracker</div>
+    <div class="login-sub">Please select your name and enter your PIN</div>
+    <select class="login-select" id="loginSpoc"><option value="">— Select your name —</option></select>
+    <input class="login-input" type="password" id="loginPin" maxlength="6" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">Login →</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appWrap" style="display:none">
+  <header class="header">
+    <div class="logo-area">
+      <div class="logo-badge">GGS</div>
+      <div><div class="app-title">Recruitment Tracker</div><div class="app-sub">Talent Acquisition · Internal Tool</div></div>
+    </div>
+    <div class="header-right">
+      <div class="user-chip"><span class="user-dot"></span><span id="userChipName">User</span></div>
+      <button class="sync-btn" id="syncBtn" onclick="loadData()"><span>🔄</span> Sync</button>
+      <div style="position:relative">
+        <button class="notif-btn" onclick="toggleNotif()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
+        <div class="notif-panel" id="notifPanel" style="display:none">
+          <div class="notif-panel-header">⚠️ Needs Attention</div>
+          <div class="notif-list" id="notifList"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <nav class="nav" id="mainNav">
+    <button class="nav-btn" onclick="switchView('admin',this)">⚙️ Admin</button>
+    <button class="nav-btn active" onclick="switchView('dashboard',this)">📊 Dashboard</button>
+    <button class="nav-btn" onclick="switchView('positions',this)">📋 Positions</button>
+    <button class="nav-btn" onclick="switchView('pipeline',this)">🔄 Pipeline</button>
+    <button class="nav-btn" onclick="switchView('employees',this)">👥 Employees</button>
+  </nav>
+  <main class="main" id="mainContent" onclick="closeNotif()"></main>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-overlay" id="detailOverlay" style="display:none" onclick="closeDetail()">
+  <div class="detail-panel" onclick="event.stopPropagation()">
+    <div class="detail-header">
+      <div><div class="detail-title" id="detailTitle"></div><div class="detail-meta" id="detailMeta"></div></div>
+      <button class="close-btn" onclick="closeDetail()">×</button>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+</div>
+
+<!-- JD MODAL -->
+<div class="modal-overlay" id="jdModal" style="display:none" onclick="closeJD()">
+  <div class="jd-popup" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="modal-title" style="margin:0" id="jdTitle">Job Description</div>
+      <button class="close-btn" style="background:var(--border);color:var(--text)" onclick="closeJD()">×</button>
+    </div>
+    <div class="jd-content" id="jdContent"></div>
+  </div>
+</div>
+
+<!-- ADD CANDIDATE MODAL -->
+<div class="modal-overlay" id="candModal" style="display:none" onclick="closeCandModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Add Candidate Profile</div>
+    <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="cName" placeholder="e.g. Rahul Sharma"/></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Years of Exp</label><input class="form-input" id="cExp" placeholder="e.g. 5"/></div>
+      <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="cLoc" placeholder="e.g. Chennai"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Notice Period</label><input class="form-input" id="cNotice" placeholder="e.g. 30 days"/></div>
+      <div class="form-group"><label class="form-label">Initial Stage</label><select class="form-input" id="cStage"></select></div>
+    </div>
+    <div id="interviewFields" style="display:none">
+      <hr class="divider"/>
+      <div style="font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;margin-bottom:10px">📅 Interview Schedule</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Interview Date</label><input type="date" class="form-input" id="cIntDate"/></div>
+        <div class="form-group"><label class="form-label">Interview Time</label><input type="time" class="form-input" id="cIntTime"/></div>
+      </div>
+      <div class="form-group"><label class="form-label">SPOC for this Interview</label>
+        <select class="form-input" id="cIntSpoc"></select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeCandModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveCandBtn" onclick="saveCandidate()">Add Candidate</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD POSITION MODAL -->
+<div class="modal-overlay" id="posModal" style="display:none" onclick="closePosModal()">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-title">Add New Position</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Beeline ID</label><input class="form-input" id="pId" placeholder="e.g. 88500-1"/></div>
+      <div class="form-group"><label class="form-label">Domain *</label><select class="form-input" id="pDomain"></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Skill Set *</label><input class="form-input" id="pSkill" placeholder="e.g. Java AWS Developer"/></div>
+      <div class="form-group"><label class="form-label">Hiring Manager *</label><input class="form-input" id="pManager" placeholder="Manager name"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">SPOC</label><select class="form-input" id="pSpoc"></select></div>
+      <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="pLoc" placeholder="e.g. Chennai"/></div>
+    </div>
+    <div class="form-group"><label class="form-label">Date Opened</label><input type="date" class="form-input" id="pDate"/></div>
+    <div class="form-group"><label class="form-label">Job Description (JD)</label>
+      <textarea class="form-input" id="pJD" rows="5" placeholder="Paste or type the full Job Description here…" style="resize:vertical"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closePosModal()">Cancel</button>
+      <button class="btn btn-primary" id="savePosBtn" onclick="savePosition()">Add Position</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD EMPLOYEE MODAL -->
+<div class="modal-overlay" id="empModal" style="display:none" onclick="closeEmpModal()">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-title" id="empModalTitle">Add Employee</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="eName" placeholder="Full Name"/></div>
+      <div class="form-group"><label class="form-label">GGS Emp ID</label><input class="form-input" id="eGGSId" placeholder="e.g. GGS-001"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Phone No</label><input class="form-input" id="ePhone" placeholder="Mobile number"/></div>
+      <div class="form-group"><label class="form-label">Personal Email</label><input class="form-input" id="ePersonalEmail" placeholder="personal@email.com"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">GGS Email</label><input class="form-input" id="eGGSEmail" placeholder="name@ggs.com"/></div>
+      <div class="form-group"><label class="form-label">DOJ in GGS</label><input type="date" class="form-input" id="eDOJ"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Skill Set</label><input class="form-input" id="eSkill" placeholder="e.g. Java Developer"/></div>
+      <div class="form-group"><label class="form-label">SPOC</label><select class="form-input" id="eSpoc"></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Team *</label>
+      <select class="form-input" id="eTeam" onchange="toggleEmpTeamFields()">
+        <option value="">— Select Team —</option>
+        <option value="Onsite">Onsite</option>
+        <option value="Offsite">Offsite</option>
+      </select>
+    </div>
+    <!-- Onsite fields -->
+    <div id="onsiteFields" style="display:none" class="conditional-section">
+      <div class="conditional-title">🏢 Onsite Details</div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">HM Name</label><input class="form-input" id="eHMName" placeholder="Hiring Manager Name"/></div>
+        <div class="form-group"><label class="form-label">CAT Email</label><input class="form-input" id="eCATEmail" placeholder="candidate@cat.com"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">HM Phone</label><input class="form-input" id="eHMPhone" placeholder="HM Phone No"/></div>
+        <div class="form-group"><label class="form-label">HM Email</label><input class="form-input" id="eHMEmail" placeholder="hm@client.com"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Bill Rate</label><input class="form-input" id="eBillRate" placeholder="e.g. $50/hr"/></div>
+        <div class="form-group"><label class="form-label">DOJ in CAT</label><input type="date" class="form-input" id="eDOJCAT" oninput="calcYearsInCAT()"/></div>
+      </div>
+      <div class="form-group"><label class="form-label">Years of Exp in CAT (Auto-calculated)</label>
+        <input class="form-input" id="eYearsCAT" readonly style="background:#f0f4ff;color:var(--blue);font-weight:600"/>
+      </div>
+    </div>
+    <!-- Offsite fields -->
+    <div id="offsiteFields" style="display:none" class="conditional-section">
+      <div class="conditional-title">🌐 Offsite Details</div>
+      <div class="form-group"><label class="form-label">HM Name</label><input class="form-input" id="eHMNameOffsite" placeholder="Hiring Manager Name"/></div>
+    </div>
+    <hr class="divider"/>
+    <div class="form-group"><label class="form-label">Status</label>
+      <select class="form-input" id="eStatus" onchange="toggleResignFields()">
+        <option value="Active">Active</option>
+        <option value="Resigned">Resigned</option>
+        <option value="Terminated">Terminated</option>
+        <option value="Relieved">Relieved</option>
+      </select>
+    </div>
+    <div id="resignFields" style="display:none" class="form-row">
+      <div class="form-group"><label class="form-label">Date of Resignation</label><input type="date" class="form-input" id="eResignDate"/></div>
+      <div class="form-group"><label class="form-label">Date of Relieving</label><input type="date" class="form-input" id="eRelievingDate"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEmpModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveEmpBtn" onclick="saveEmployee()">Save Employee</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SPOC MODAL -->
+<div class="modal-overlay" id="spocModal" style="display:none" onclick="closeSpocModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title" id="spocModalTitle">Add SPOC</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="sName" placeholder="SPOC Name"/></div>
+      <div class="form-group"><label class="form-label">Phone No</label><input class="form-input" id="sPhone" placeholder="Phone Number"/></div>
+    </div>
+    <div class="form-group"><label class="form-label">Email ID</label><input class="form-input" id="sEmail" placeholder="spoc@ggs.com"/></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Permission</label>
+        <select class="form-input" id="sPerm"><option value="ReadWrite">Read / Write</option><option value="Read">Read Only</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">PIN (4-6 digits)</label><input class="form-input" id="sPin" type="password" placeholder="e.g. 1234" maxlength="6"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeSpocModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveSpocBtn" onclick="saveSpoc()">Save SPOC</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD DOMAIN MODAL -->
+<div class="modal-overlay" id="domainModal" style="display:none" onclick="closeDomainModal()">
+  <div class="modal" style="max-width:380px" onclick="event.stopPropagation()">
+    <div class="modal-title">Add New Domain</div>
+    <div class="form-group"><label class="form-label">Domain Name *</label><input class="form-input" id="dName" placeholder="e.g. Cloud, Testing, ERP…"/></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDomainModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDomain()">Add Domain</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="importModal" style="display:none" onclick="closeImportModal()">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-title">📥 Bulk Import Positions from Excel</div>
+    <div id="importStep1">
+      <div style="border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;background:var(--bg);cursor:pointer" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault()" ondrop="handleFileDrop(event)">
+        <div style="font-size:38px;margin-bottom:10px">📊</div>
+        <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:5px">Click to upload or drag & drop</div>
+        <div style="font-size:12px;color:var(--muted)">Supports .xlsx and .xls · Columns: Manager, Status, Beeline ID, Skill Set, Location, Domain</div>
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFileSelect(event)"/>
+    </div>
+    <div id="importStep2" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:600" id="importSummary"></div>
+        <button class="btn btn-ghost btn-sm" onclick="resetImport()">← Change File</button>
+      </div>
+      <div id="importWarnings" style="display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#92400e"></div>
+      <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border);margin-bottom:14px"><table><thead id="previewHead"></thead><tbody id="previewBody"></tbody></table></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Date Opened (for all)</label><input type="date" class="form-input" id="importDate"/></div>
+        <div class="form-group"><label class="form-label">SPOC (for all)</label><select class="form-input" id="importSpocSel"></select></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeImportModal()">Cancel</button>
+      <button class="btn btn-primary" id="importBtn" style="display:none" onclick="runImport()">📥 Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST & LOADING -->
+<div class="toast-wrap" id="toastWrap"></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div class="loading-text" id="loadingText">Connecting…</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3QifaXBGJHbQ4Nzyomwv0zghS2bgHUFDA0NXkxVkGRRIjiXpcDTSEcShTgx4qx5s9/exec";
+
+const STAGES = ["Profiles Shared","L1 Scheduled","L1 Cleared","L2 Scheduled","L2 Cleared","Offer Extended","Onboarded","Screen Rejected","L1 Rejected","L2 Rejected","Hold","Dropped"];
+const ACTIVE_STAGES = ["Profiles Shared","L1 Scheduled","L1 Cleared","L2 Scheduled","L2 Cleared","Offer Extended","Onboarded"];
+const REJECTED_STAGES = ["Screen Rejected","L1 Rejected","L2 Rejected","Hold","Dropped"];
+const INTERVIEW_STAGES = ["L1 Scheduled","L2 Scheduled"];
+
+const STAGE_STYLE = {
+  "Profiles Shared": {bg:"#dbeafe",color:"#1e40af",dot:"#3b82f6"},
+  "L1 Scheduled":    {bg:"#ede9fe",color:"#5b21b6",dot:"#8b5cf6"},
+  "L1 Cleared":      {bg:"#cffafe",color:"#155e75",dot:"#06b6d4"},
+  "L2 Scheduled":    {bg:"#fef3c7",color:"#92400e",dot:"#f59e0b"},
+  "L2 Cleared":      {bg:"#d1fae5",color:"#065f46",dot:"#10b981"},
+  "Offer Extended":  {bg:"#ffedd5",color:"#9a3412",dot:"#f97316"},
+  "Onboarded":       {bg:"#dcfce7",color:"#14532d",dot:"#22c55e"},
+  "Screen Rejected": {bg:"#fee2e2",color:"#991b1b",dot:"#ef4444"},
+  "L1 Rejected":     {bg:"#fee2e2",color:"#991b1b",dot:"#ef4444"},
+  "L2 Rejected":     {bg:"#fee2e2",color:"#991b1b",dot:"#ef4444"},
+  "Hold":            {bg:"#f3f4f6",color:"#374151",dot:"#9ca3af"},
+  "Dropped":         {bg:"#fef3c7",color:"#92400e",dot:"#f59e0b"},
+};
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let positions=[], candidates=[], employees=[], spocs=[], domains=[], interviews=[];
+let activeView="dashboard", selectedPosId=null;
+let filterDomain="All", filterStatus="All", searchQ="";
+let pipelineStageFilter="All";
+let currentUser=null;
+let editingEmpId=null, editingSpocId=null;
+let importedRows=[];
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+window.onload = () => {
+  document.getElementById("pDate").value = today();
+  document.getElementById("importDate").value = today();
+  STAGES.forEach(s => {
+    const opt = document.createElement("option");
+    opt.value=s; opt.textContent=s;
+    document.getElementById("cStage").appendChild(opt);
+  });
+  loadDataForLogin();
+};
+
+function today(){ return new Date().toISOString().split("T")[0]; }
+
+function daysSince(d){
+  if(!d) return 0;
+  return Math.floor((new Date()-new Date(d))/86400000);
+}
+function uid(){ return "ID"+Date.now()+Math.random().toString(36).substr(2,5); }
+
+function calcYearsInCAT(){
+  const doj = document.getElementById("eDOJCAT").value;
+  if(!doj){ document.getElementById("eYearsCAT").value=""; return; }
+  const diff = (new Date()-new Date(doj))/(1000*60*60*24*365.25);
+  document.getElementById("eYearsCAT").value = diff>0 ? diff.toFixed(1)+" yrs" : "< 1 yr";
+}
+
+function calcYearsInCATVal(doj){
+  if(!doj) return "";
+  const diff = (new Date()-new Date(doj))/(1000*60*60*24*365.25);
+  return diff>0 ? diff.toFixed(1)+" yrs" : "< 1 yr";
+}
+
+// ═══════════════════════════════════════════════════════════
+// API
+// ═══════════════════════════════════════════════════════════
+async function api(method, body){
+  const TO = 20000;
+  const race = p => Promise.race([p, new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),TO))]);
+  if(method==="GET"){
+    const res = await race(fetch(SCRIPT_URL+"?action=getAll&t="+Date.now(),{redirect:"follow"}));
+    return res.json();
+  } else {
+    const res = await race(fetch(SCRIPT_URL,{method:"POST",redirect:"follow",headers:{"Content-Type":"text/plain"},body:JSON.stringify(body)}));
+    return res.json();
+  }
+}
+
+async function loadDataForLogin(){
+  showLoad("Loading…");
+  try {
+    const data = await api("GET");
+    applyData(data);
+    populateLoginSpocs();
+  } catch(e) {
+    // offline mode — use empty data
+    spocs = [{ ID:"SPOC-001", Name:"Admin", Email:"admin@ggs.com", Phone:"", Permission:"ReadWrite", PIN:"1234", Active:"Yes" }];
+    domains = [{ ID:"DOM-001", Name:"Digital", Active:"Yes"}, {ID:"DOM-002", Name:"Embedded", Active:"Yes"}];
+    populateLoginSpocs();
+  } finally { hideLoad(); }
+}
+
+async function loadData(){
+  showLoad("Syncing with Google Sheets…");
+  document.getElementById("syncBtn").classList.add("spinning");
+  try {
+    const data = await api("GET");
+    applyData(data);
+    renderAll();
+    showToast("✅ Synced — "+positions.length+" positions loaded","success");
+  } catch(e) { showToast("❌ Sync failed — "+e.message,"error"); }
+  finally { hideLoad(); document.getElementById("syncBtn").classList.remove("spinning"); }
+}
+
+function applyData(data){
+  positions  = (data.positions  ||[]).map(normalizePos).sort((a,b)=>new Date(b.openedDate)-new Date(a.openedDate));
+  candidates = (data.candidates ||[]).map(normalizeCand);
+  employees  = (data.employees  ||[]).map(normalizeEmp);
+  spocs      = (data.spocs      ||[]).filter(s=>s.Active!=="No");
+  domains    = (data.domains    ||[]).filter(d=>d.Active!=="No");
+  interviews = (data.interviews ||[]);
+}
+
+function normalizePos(p){ return { id:v(p,"ID"), manager:v(p,"Manager"), spoc:v(p,"SPOC"), skillSet:v(p,"SkillSet"), location:v(p,"Location"), domain:v(p,"Domain"), openedDate:v(p,"OpenedDate"), status:v(p,"Status")||"Open", jd:v(p,"JD") }; }
+function normalizeCand(c){ return { id:v(c,"ID"), positionId:v(c,"PositionID"), name:v(c,"Name"), yearsExp:v(c,"YearsExp"), location:v(c,"Location"), noticePeriod:v(c,"NoticePeriod"), stage:v(c,"Stage")||"Profiles Shared", lastUpdated:v(c,"LastUpdated"), interviewDate:v(c,"InterviewDate"), interviewTime:v(c,"InterviewTime") }; }
+function normalizeEmp(e){ return { id:v(e,"ID"), name:v(e,"Name"), ggsEmpId:v(e,"GGSEmpId"), phone:v(e,"Phone"), personalEmail:v(e,"PersonalEmail"), ggsEmail:v(e,"GGSEmail"), doj:v(e,"DOJ"), skillSet:v(e,"SkillSet"), spoc:v(e,"SPOC"), team:v(e,"Team"), hmName:v(e,"HMName"), catEmail:v(e,"CATEmail"), hmPhone:v(e,"HMPhone"), hmEmail:v(e,"HMEmail"), billRate:v(e,"BillRate"), dojInCat:v(e,"DOJinCAT"), yearsInCat:v(e,"YearsInCAT"), status:v(e,"Status")||"Active", resignDate:v(e,"ResignDate"), relievingDate:v(e,"RelievingDate"), positionId:v(e,"PositionID") }; }
+function v(obj,key){ return obj[key]!==undefined?String(obj[key]).trim():""; }
+
+// ═══════════════════════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════════════════════
+function populateLoginSpocs(){
+  const sel = document.getElementById("loginSpoc");
+  sel.innerHTML = '<option value="">— Select your name —</option>';
+  spocs.forEach(s => { const o=document.createElement("option"); o.value=s.ID||s.Name; o.textContent=s.Name; sel.appendChild(o); });
+}
+
+function doLogin(){
+  const spocId = document.getElementById("loginSpoc").value;
+  const pin    = document.getElementById("loginPin").value;
+  const err    = document.getElementById("loginErr");
+  if(!spocId){ err.textContent="Please select your name"; return; }
+  const spoc = spocs.find(s=>(s.ID===spocId||s.Name===spocId));
+  if(!spoc){ err.textContent="User not found"; return; }
+  if(String(spoc.PIN||"").trim() !== String(pin).trim()){ err.textContent="Incorrect PIN. Please try again."; return; }
+  currentUser = spoc;
+  document.getElementById("userChipName").textContent = spoc.Name;
+  document.getElementById("loginWrap").style.display="none";
+  document.getElementById("appWrap").style.display="flex";
+  // Hide admin tab for read-only users
+  if(spoc.Permission==="Read"){
+    document.querySelector(".nav-btn").style.display="none";
+  }
+  loadData();
+  scheduleNotifications();
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function getStatus(posId){ return candidates.filter(c=>c.positionId===posId).some(c=>c.stage==="Onboarded")?"Filled":"Open"; }
+function getHighest(posId){
+  const cc=candidates.filter(c=>c.positionId===posId&&ACTIVE_STAGES.includes(c.stage));
+  if(!cc.length) return null;
+  let best=-1; cc.forEach(c=>{const i=ACTIVE_STAGES.indexOf(c.stage);if(i>best)best=i;});
+  return best>=0?ACTIVE_STAGES[best]:null;
+}
+function getNotifs(){ return positions.filter(p=>{ if(getStatus(p.id)==="Filled")return false; const cc=candidates.filter(c=>c.positionId===p.id); if(!cc.length)return daysSince(p.openedDate)>=3; const last=cc.reduce((mx,c)=>{const d=new Date(c.lastUpdated||p.openedDate);return d>mx?d:mx;},new Date(p.openedDate||"2000-01-01")); return Math.floor((new Date()-last)/86400000)>=3; }); }
+function stageBadgeHTML(stage){ if(!stage)return""; const s=STAGE_STYLE[stage]||{bg:"#f3f4f6",color:"#374151",dot:"#9ca3af"}; return `<span class="stage-badge" style="background:${s.bg};color:${s.color}"><span class="dot" style="background:${s.dot}"></span>${stage}</span>`; }
+function pipelineStepsHTML(hs){ const idx=ACTIVE_STAGES.indexOf(hs); return ACTIVE_STAGES.map((s,i)=>{const st=STAGE_STYLE[s],active=i<=idx;return `<div class="pipeline-step${active?" active":""}" style="${active?`background:${st.dot}`;""}">${s.split(" ")[0]}</div>`;}).join(""); }
+function canWrite(){ return !currentUser||currentUser.Permission!=="Read"; }
+
+function getQuarter(dateStr){
+  if(!dateStr)return null;
+  const d=new Date(dateStr); const m=d.getMonth();
+  const q=m<3?"Q1":m<6?"Q2":m<9?"Q3":"Q4";
+  return `${q} ${d.getFullYear()}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════════════════════
+function renderAll(){
+  updateNotifBadge();
+  populateSelects();
+  if(activeView==="admin")     renderAdmin();
+  else if(activeView==="dashboard") renderDashboard();
+  else if(activeView==="positions") renderPositions();
+  else if(activeView==="pipeline")  renderPipeline();
+  else if(activeView==="employees") renderEmployees();
+  if(selectedPosId) renderDetailPanel(selectedPosId);
+}
+
+function switchView(view,btn){
+  activeView=view; selectedPosId=null;
+  document.getElementById("detailOverlay").style.display="none";
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  renderAll();
+}
+
+function populateSelects(){
+  // Domain selects
+  ["pDomain"].forEach(id=>{
+    const el=document.getElementById(id); if(!el)return;
+    const cur=el.value; el.innerHTML="";
+    domains.forEach(d=>{const o=document.createElement("option");o.value=d.Name;o.textContent=d.Name;el.appendChild(o);});
+    if(cur)el.value=cur;
+  });
+  // SPOC selects
+  ["pSpoc","cIntSpoc","eSpoc","importSpocSel"].forEach(id=>{
+    const el=document.getElementById(id); if(!el)return;
+    const cur=el.value;
+    el.innerHTML=id==="pSpoc"?'<option value="">— None —</option>':'';
+    spocs.forEach(s=>{const o=document.createElement("option");o.value=s.Name;o.textContent=s.Name;el.appendChild(o);});
+    if(cur)el.value=cur;
+  });
+}
+
+function updateNotifBadge(){
+  const n=getNotifs();
+  const badge=document.getElementById("notifBadge");
+  badge.textContent=n.length; badge.style.display=n.length>0?"flex":"none";
+  const list=document.getElementById("notifList");
+  if(!n.length){list.innerHTML=`<div style="padding:18px;text-align:center;color:#6b7db3;font-size:12px">All positions are up to date ✓</div>`;return;}
+  list.innerHTML=n.map(p=>`<div class="notif-item" onclick="openPos('${p.id}')"><span style="font-size:16px">🚨</span><div><div class="notif-text"><strong>${p.skillSet}</strong> — ${p.manager}</div><div class="notif-text" style="color:#6b7db3">ID: ${p.id} · ${p.location}</div><div class="notif-days">No activity for ${daysSince(p.openedDate)}+ days</div></div></div>`).join("");
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function renderDashboard(){
+  const notifs=getNotifs();
+  const total=positions.length, filled=positions.filter(p=>getStatus(p.id)==="Filled").length, open=total-filled;
+  const digital=positions.filter(p=>p.domain==="Digital").length, embedded=positions.filter(p=>p.domain==="Embedded").length;
+  const activeEmps=employees.filter(e=>e.status==="Active").length;
+  const relieved=employees.filter(e=>e.status==="Relieved"||e.status==="Resigned").length;
+
+  // Stage dist
+  const sd={};STAGES.forEach(s=>sd[s]=0);candidates.forEach(c=>{if(sd[c.stage]!==undefined)sd[c.stage]++;});
+  const maxSD=Math.max(...Object.values(sd),1);
+  const skillMap={};positions.forEach(p=>{const k=p.skillSet.split(" ")[0].replace(/[()]/g,"");skillMap[k]=(skillMap[k]||0)+1;});
+  const skillGroups=Object.entries(skillMap).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const maxSG=Math.max(...skillGroups.map(s=>s[1]),1);
+
+  // SPOC metrics
+  const spocMetrics = buildSpocMetrics();
+  const quarters = [...new Set(employees.map(e=>getQuarter(e.doj)).filter(Boolean))].sort().reverse();
+
+  document.getElementById("mainContent").innerHTML = `
+    ${notifs.length>0?`<div class="alert-banner">⚠️ <strong>${notifs.length} position${notifs.length>1?"s":""}</strong> with no activity for 3+ days — click 🔔 for details.</div>`:""}
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Positions</div><div class="stat-value">${total}</div><div class="stat-sub">${digital} Digital · ${embedded} Embedded</div></div>
+      <div class="stat-card"><div class="stat-label">Open</div><div class="stat-value" style="color:#f59e0b">${open}</div><span class="stat-pill" style="background:#fef3c7;color:#92400e">Pending</span></div>
+      <div class="stat-card"><div class="stat-label">Filled</div><div class="stat-value" style="color:#10b981">${filled}</div><span class="stat-pill" style="background:#d1fae5;color:#065f46">Onboarded</span></div>
+      <div class="stat-card"><div class="stat-label">Active Employees</div><div class="stat-value" style="color:#3b82f6">${activeEmps}</div><div class="stat-sub">${relieved} relieved/resigned</div></div>
+      <div class="stat-card"><div class="stat-label">Profiles Shared</div><div class="stat-value">${candidates.length}</div><div class="stat-sub">Across all positions</div></div>
+      <div class="stat-card"><div class="stat-label">Needs Attention</div><div class="stat-value" style="color:#ef4444">${notifs.length}</div><span class="stat-pill" style="background:#fee2e2;color:#991b1b">3+ Days Idle</span></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-title">📈 Pipeline Stage Distribution</div>
+        ${ACTIVE_STAGES.map(s=>`<div class="bar-row"><div class="bar-label">${s}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max((sd[s]/maxSD)*100,sd[s]>0?6:0)}%;background:${STAGE_STYLE[s].dot}">${sd[s]>0?sd[s]:""}</div></div></div>`).join("")}
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🛠️ Positions by Skill</div>
+        ${skillGroups.map(([sk,ct])=>`<div class="bar-row"><div class="bar-label">${sk}</div><div class="bar-track"><div class="bar-fill" style="width:${(ct/maxSG)*100}%;background:#2a52be">${ct}</div></div></div>`).join("")}
+      </div>
+    </div>
+
+    <!-- SPOC METRICS -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-title">👤 SPOC Performance Metrics</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select class="filter-select" id="spocQuarterFilter" onchange="filterSpocMetrics()">
+            <option value="All">All Time</option>
+            ${quarters.map(q=>`<option value="${q}">${q}</option>`).join("")}
+            <option value="Q1">Q1 (Jan–Mar)</option>
+            <option value="Q2">Q2 (Apr–Jun)</option>
+            <option value="Q3">Q3 (Jul–Sep)</option>
+            <option value="Q4">Q4 (Oct–Dec)</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding:16px">
+        <div class="spoc-metrics-grid" id="spocMetricsGrid">${renderSpocMetricsHTML(spocMetrics,"All")}</div>
+      </div>
+    </div>
+
+    <!-- NET ADDITION TABLE -->
+    <div class="section-card">
+      <div class="section-card-header"><div class="section-card-title">📊 Net Addition by Quarter (Onboarded − Relieved)</div></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>SPOC</th><th>Q1 (Jan–Mar)</th><th>Q2 (Apr–Jun)</th><th>Q3 (Jul–Sep)</th><th>Q4 (Oct–Dec)</th><th>Total Net</th></tr></thead>
+        <tbody>${renderNetAdditionRows()}</tbody>
+      </table></div>
+    </div>`;
+}
+
+function buildSpocMetrics(){
+  return spocs.map(s=>{
+    const myPos = positions.filter(p=>p.spoc===s.Name);
+    const myCands = candidates.filter(c=>myPos.some(p=>p.id===c.positionId));
+    const closed = myPos.filter(p=>getStatus(p.id)==="Filled").length;
+    const onboarded = employees.filter(e=>e.spoc===s.Name&&e.status==="Active").length;
+    const relieved = employees.filter(e=>e.spoc===s.Name&&(e.status==="Relieved"||e.status==="Resigned")).length;
+    return { name:s.Name, total:myPos.length, closed, profiles:myCands.length, onboarded, relieved, net:onboarded-relieved };
+  });
+}
+
+function renderSpocMetricsHTML(metrics, quarter){
+  if(!metrics.length) return `<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-text">No SPOCs found</div></div>`;
+  return metrics.map(m=>`
+    <div class="spoc-metric-card">
+      <div class="spoc-metric-name">👤 ${m.name}</div>
+      <div class="spoc-metric-row"><span>Positions Handled</span><span class="spoc-metric-val">${m.total}</span></div>
+      <div class="spoc-metric-row"><span>Positions Closed</span><span class="spoc-metric-val" style="color:#10b981">${m.closed}</span></div>
+      <div class="spoc-metric-row"><span>Profiles Shared</span><span class="spoc-metric-val">${m.profiles}</span></div>
+      <div class="spoc-metric-row"><span>Active Employees</span><span class="spoc-metric-val" style="color:#3b82f6">${m.onboarded}</span></div>
+      <div class="spoc-metric-row"><span>Relieved/Resigned</span><span class="spoc-metric-val" style="color:#ef4444">${m.relieved}</span></div>
+      <div class="spoc-metric-row" style="border-top:2px solid var(--border);margin-top:4px;padding-top:8px"><span style="font-weight:700">Net Addition</span><span class="spoc-metric-val" style="color:${m.net>=0?"#10b981":"#ef4444"}">${m.net>=0?"+":""}${m.net}</span></div>
+    </div>`).join("");
+}
+
+function filterSpocMetrics(){
+  const q=document.getElementById("spocQuarterFilter").value;
+  document.getElementById("spocMetricsGrid").innerHTML=renderSpocMetricsHTML(buildSpocMetrics(),q);
+}
+
+function renderNetAdditionRows(){
+  const quarters=["Q1","Q2","Q3","Q4"];
+  return spocs.map(s=>{
+    const cells=quarters.map(q=>{
+      const qEmps=employees.filter(e=>e.spoc===s.Name&&getQuarter(e.doj)&&getQuarter(e.doj).startsWith(q));
+      const onb=qEmps.filter(e=>e.status==="Active").length;
+      const rel=employees.filter(e=>e.spoc===s.Name&&(e.status==="Relieved"||e.status==="Resigned")&&e.relievingDate&&getQuarter(e.relievingDate)&&getQuarter(e.relievingDate).startsWith(q)).length;
+      const net=onb-rel; return `<td style="text-align:center"><span style="font-weight:700;color:${net>=0?"#10b981":"#ef4444"}">${net>=0?"+":""}${net}</span><br><span style="font-size:10px;color:#9ca3af">${onb} in · ${rel} out</span></td>`;
+    });
+    const totalOnb=employees.filter(e=>e.spoc===s.Name&&e.status==="Active").length;
+    const totalRel=employees.filter(e=>e.spoc===s.Name&&(e.status==="Relieved"||e.status==="Resigned")).length;
+    const totalNet=totalOnb-totalRel;
+    return `<tr><td style="font-weight:600">${s.Name}</td>${cells.join("")}<td style="text-align:center;font-weight:700;font-size:14px;color:${totalNet>=0?"#10b981":"#ef4444"}">${totalNet>=0?"+":""}${totalNet}</td></tr>`;
+  }).join("")||`<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:20px">No SPOC data</td></tr>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// POSITIONS
+// ═══════════════════════════════════════════════════════════
+function renderPositions(){
+  const notifs=getNotifs();
+  const filtered=positions.filter(p=>{
+    if(filterDomain!=="All"&&p.domain!==filterDomain)return false;
+    if(filterStatus!=="All"&&getStatus(p.id)!==filterStatus)return false;
+    if(searchQ){const q=searchQ.toLowerCase();return p.skillSet.toLowerCase().includes(q)||p.manager.toLowerCase().includes(q)||p.id.toLowerCase().includes(q)||(p.spoc||"").toLowerCase().includes(q);}
+    return true;
+  });
+  const writeActions = canWrite() ? `<button class="btn btn-primary" onclick="openPosModal()">+ Add Position</button><button class="btn btn-ghost" onclick="openImportModal()" style="border-color:#10b981;color:#065f46;background:#d1fae5">📥 Import Excel</button>` : "";
+  document.getElementById("mainContent").innerHTML=`
+    <div class="filters-row">
+      <input class="search-input" id="posSearch" placeholder="🔍  Search by ID, skill, manager, SPOC…" value="${searchQ}" oninput="searchQ=this.value;renderPositions()"/>
+      <select class="filter-select" onchange="filterDomain=this.value;renderPositions()">
+        <option ${filterDomain==="All"?"selected":""}>All Domains</option>
+        ${domains.map(d=>`<option ${filterDomain===d.Name?"selected":""}>${d.Name}</option>`).join("")}
+      </select>
+      <select class="filter-select" onchange="filterStatus=this.value;renderPositions()">
+        <option ${filterStatus==="All"?"selected":""}>All Status</option>
+        <option ${filterStatus==="Open"?"selected":""}>Open</option>
+        <option ${filterStatus==="Filled"?"selected":""}>Filled</option>
+      </select>
+      ${writeActions}
+    </div>
+    <div class="section-card">
+      <div class="section-card-header"><div class="section-card-title">All Positions (${filtered.length})</div></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Beeline ID</th><th>Skill Set</th><th>Hiring Manager</th><th>SPOC</th><th>Location</th><th>Domain</th><th>Date Opened</th><th>Profiles</th><th>Highest Stage</th><th>Status</th><th></th></tr></thead>
+        <tbody>${filtered.map(pos=>{
+          const status=getStatus(pos.id),cc=candidates.filter(c=>c.positionId===pos.id),hs=getHighest(pos.id),stale=notifs.some(n=>n.id===pos.id);
+          return `<tr class="${stale?"stale-row":""}">
+            <td><span style="cursor:pointer;color:var(--blue);font-weight:700;text-decoration:underline;font-size:12px" onclick="showJD('${pos.id}')" title="Click to view JD">${pos.id}</span></td>
+            <td style="font-weight:600">${pos.skillSet}</td>
+            <td style="font-size:11.5px">${pos.manager}</td>
+            <td style="font-size:11.5px">${pos.spoc||"<span style='color:#9ca3af'>—</span>"}</td>
+            <td style="font-size:11.5px">${pos.location}</td>
+            <td><span class="tag ${pos.domain==="Digital"?"tag-digital":"tag-embedded"}">${pos.domain}</span></td>
+            <td style="font-size:11.5px">${pos.openedDate} <span style="color:#9ca3af">(${daysSince(pos.openedDate)}d)</span></td>
+            <td style="text-align:center;font-weight:700">${cc.length}</td>
+            <td>${hs?stageBadgeHTML(hs):"<span style='color:#9ca3af;font-size:11px'>No profiles</span>"}</td>
+            <td><span class="tag ${status==="Filled"?"tag-closed":"tag-open"}">${status}</span></td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openPos('${pos.id}')">Manage →</button></td>
+          </tr>`;
+        }).join("")}</tbody>
+      </table></div>
+    </div>`;
+}
+
+function showJD(posId){
+  const pos=positions.find(p=>p.id===posId);
+  if(!pos)return;
+  document.getElementById("jdTitle").textContent=`Job Description — ${pos.skillSet} (${pos.id})`;
+  document.getElementById("jdContent").textContent=pos.jd||"No Job Description added for this position.";
+  document.getElementById("jdModal").style.display="flex";
+}
+function closeJD(){ document.getElementById("jdModal").style.display="none"; }
+
+// ═══════════════════════════════════════════════════════════
+// PIPELINE
+// ═══════════════════════════════════════════════════════════
+function renderPipeline(){
+  // Summary counts
+  const counts={};STAGES.forEach(s=>counts[s]=0);candidates.forEach(c=>{if(counts[c.stage]!==undefined)counts[c.stage]++;});
+  const filtered = pipelineStageFilter==="All" ? candidates : candidates.filter(c=>c.stage===pipelineStageFilter);
+
+  document.getElementById("mainContent").innerHTML=`
+    <!-- Summary cards -->
+    <div class="pipeline-summary-row">
+      ${ACTIVE_STAGES.map(s=>`<div class="pipeline-summary-card" style="border-top:3px solid ${STAGE_STYLE[s].dot};cursor:pointer" onclick="setPipelineFilter('${s}')">
+        <div class="pipeline-summary-val" style="color:${STAGE_STYLE[s].dot}">${counts[s]}</div>
+        <div class="pipeline-summary-label">${s.split(" ")[0]}</div>
+      </div>`).join("")}
+    </div>
+    <!-- Stage filter tabs -->
+    <div class="pipeline-stage-tabs">
+      <div class="pipeline-stage-tab ${pipelineStageFilter==="All"?"active":""}" style="${pipelineStageFilter==="All"?"background:var(--navy);color:#fff":""}" onclick="setPipelineFilter('All')">All Candidates</div>
+      ${STAGES.map(s=>`<div class="pipeline-stage-tab ${pipelineStageFilter===s?"active":""}" style="${pipelineStageFilter===s?`background:${STAGE_STYLE[s].dot}`:""};color:${pipelineStageFilter===s?"#fff":STAGE_STYLE[s].dot};border-color:${STAGE_STYLE[s].dot}" onclick="setPipelineFilter('${s}')">${s} (${counts[s]})</div>`).join("")}
+    </div>
+    <!-- Table -->
+    <div class="section-card">
+      <div class="section-card-header">
+        <div class="section-card-title">${pipelineStageFilter==="All"?"All Candidates":pipelineStageFilter} (${filtered.length})</div>
+      </div>
+      ${filtered.length===0?`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">No candidates in this stage</div></div>`:`
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Candidate</th><th>Position</th><th>Skill Set</th><th>Exp</th><th>Location</th><th>Notice</th><th>Stage</th><th>Interview Date</th><th>Last Updated</th><th></th></tr></thead>
+        <tbody>${filtered.map(c=>{
+          const pos=positions.find(p=>p.id===c.positionId)||{};
+          return `<tr>
+            <td style="font-weight:700">${c.name}</td>
+            <td><code style="font-size:10px;background:#f0f4ff;padding:2px 5px;border-radius:3px">${c.positionId}</code></td>
+            <td style="font-size:12px">${pos.skillSet||""}</td>
+            <td style="text-align:center">${c.yearsExp}yr</td>
+            <td style="font-size:11.5px">${c.location}</td>
+            <td style="font-size:11.5px">${c.noticePeriod}</td>
+            <td>${stageBadgeHTML(c.stage)}</td>
+            <td style="font-size:11.5px">${c.interviewDate?`📅 ${c.interviewDate} ${c.interviewTime||""}`:"<span style='color:#9ca3af'>—</span>"}</td>
+            <td style="font-size:11px;color:#9ca3af">${c.lastUpdated||""}</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="openPos('${c.positionId}')">View →</button></td>
+          </tr>`;
+        }).join("")}</tbody>
+      </table></div>`}
+    </div>`;
+}
+
+function setPipelineFilter(stage){ pipelineStageFilter=stage; renderPipeline(); }
+
+// ═══════════════════════════════════════════════════════════
+// EMPLOYEES
+// ═══════════════════════════════════════════════════════════
+function renderEmployees(){
+  const searchEmp = (document.getElementById("empSearch")||{value:""}).value||"";
+  const filterEmpStatus = (document.getElementById("empStatusFilter")||{value:"All"}).value||"All";
+  const filterTeam = (document.getElementById("teamFilter")||{value:"All"}).value||"All";
+
+  const filtered = employees.filter(e=>{
+    if(filterTeam!=="All"&&e.team!==filterTeam)return false;
+    if(filterEmpStatus!=="All"&&e.status!==filterEmpStatus)return false;
+    if(searchEmp){const q=searchEmp.toLowerCase();return e.name.toLowerCase().includes(q)||(e.ggsEmpId||"").toLowerCase().includes(q)||(e.skillSet||"").toLowerCase().includes(q)||(e.spoc||"").toLowerCase().includes(q);}
+    return true;
+  });
+
+  const writeBtn = canWrite()?`<button class="btn btn-primary" onclick="openEmpModal()">+ Add Employee</button>`:"";
+  document.getElementById("mainContent").innerHTML=`
+    <div class="filters-row">
+      <input class="search-input" id="empSearch" placeholder="🔍  Search by name, ID, skill, SPOC…" value="${searchEmp}" oninput="renderEmployees()"/>
+      <select class="filter-select" id="teamFilter" onchange="renderEmployees()">
+        <option value="All">All Teams</option><option value="Onsite">Onsite</option><option value="Offsite">Offsite</option>
+      </select>
+      <select class="filter-select" id="empStatusFilter" onchange="renderEmployees()">
+        <option value="All">All Status</option><option value="Active">Active</option><option value="Resigned">Resigned</option><option value="Terminated">Terminated</option><option value="Relieved">Relieved</option>
+      </select>
+      ${writeBtn}
+    </div>
+    <div class="section-card">
+      <div class="section-card-header"><div class="section-card-title">Employees (${filtered.length})</div></div>
+      ${filtered.length===0?`<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No employees found</div></div>`:`
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Name</th><th>GGS ID</th><th>Skill Set</th><th>Team</th><th>SPOC</th><th>DOJ</th><th>HM Name</th><th>Yrs in CAT</th><th>Status</th><th></th></tr></thead>
+        <tbody>${filtered.map(e=>`<tr>
+          <td style="font-weight:700">${e.name}</td>
+          <td><code style="font-size:11px;background:#f0f4ff;padding:2px 5px;border-radius:3px">${e.ggsEmpId||"—"}</code></td>
+          <td style="font-size:12px">${e.skillSet||"—"}</td>
+          <td><span class="tag ${e.team==="Onsite"?"tag-onsite":"tag-offsite"}">${e.team||"—"}</span></td>
+          <td style="font-size:11.5px">${e.spoc||"—"}</td>
+          <td style="font-size:11.5px">${e.doj||"—"}</td>
+          <td style="font-size:11.5px">${e.hmName||"—"}</td>
+          <td style="font-size:11.5px;font-weight:600;color:var(--blue)">${e.dojInCat?calcYearsInCATVal(e.dojInCat):"—"}</td>
+          <td><span class="tag tag-${e.status?e.status.toLowerCase():"active"}">${e.status||"Active"}</span></td>
+          <td style="display:flex;gap:4px">
+            ${canWrite()?`<button class="btn btn-ghost btn-sm" onclick="openEditEmpModal('${e.id}')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteEmployee('${e.id}')">✕</button>`:""}
+          </td>
+        </tr>`).join("")}</tbody>
+      </table></div>`}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════════════════════════
+function renderAdmin(){
+  if(currentUser&&currentUser.Permission==="Read"){ document.getElementById("mainContent").innerHTML=`<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-text">You have Read-Only access. Admin panel is restricted.</div></div>`; return; }
+  document.getElementById("mainContent").innerHTML=`
+    <div class="admin-grid">
+      <!-- SPOCs -->
+      <div class="admin-card">
+        <div class="admin-card-header">👤 SPOC Management <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none" onclick="openSpocModal()">+ Add</button></div>
+        <div class="admin-card-body">
+          ${spocs.length===0?`<div class="empty-state"><div class="empty-icon">👤</div><div class="empty-text">No SPOCs added</div></div>`:
+          spocs.map(s=>`<div class="spoc-row">
+            <div class="spoc-info">
+              <div class="spoc-name">${s.Name}</div>
+              <div class="spoc-detail">${s.Email||"—"} · ${s.Phone||"—"}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span class="permission-badge ${s.Permission==="ReadWrite"?"perm-rw":"perm-r"}">${s.Permission==="ReadWrite"?"R/W":"R"}</span>
+              <button class="btn btn-ghost btn-sm" onclick="openEditSpocModal('${s.ID||s.Name}')">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteSpoc('${s.ID||s.Name}')">✕</button>
+            </div>
+          </div>`).join("")}
+        </div>
+      </div>
+      <!-- Domains -->
+      <div class="admin-card">
+        <div class="admin-card-header">🌐 Domain Management <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none" onclick="openDomainModal()">+ Add</button></div>
+        <div class="admin-card-body">
+          ${domains.map(d=>`<div class="spoc-row">
+            <div class="spoc-name">${d.Name}</div>
+            <button class="btn btn-danger btn-sm" onclick="deleteDomain('${d.ID||d.Name}')">Remove</button>
+          </div>`).join("")}
+        </div>
+      </div>
+    </div>
+    <!-- Info card -->
+    <div class="section-card">
+      <div class="section-card-header"><div class="section-card-title">ℹ️ Application Info</div></div>
+      <div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+        <div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Total Positions</div><div style="font-size:22px;font-weight:700;color:var(--navy)">${positions.length}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Total Employees</div><div style="font-size:22px;font-weight:700;color:var(--navy)">${employees.length}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Total SPOCs</div><div style="font-size:22px;font-weight:700;color:var(--navy)">${spocs.length}</div></div>
+        <div><div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Domains</div><div style="font-size:22px;font-weight:700;color:var(--navy)">${domains.length}</div></div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DETAIL PANEL
+// ═══════════════════════════════════════════════════════════
+function openPos(posId){ selectedPosId=posId; document.getElementById("detailOverlay").style.display="flex"; renderDetailPanel(posId); closeNotif(); }
+function closeDetail(){ selectedPosId=null; document.getElementById("detailOverlay").style.display="none"; }
+
+function renderDetailPanel(posId){
+  const pos=positions.find(p=>p.id===posId); if(!pos)return;
+  const cc=candidates.filter(c=>c.positionId===posId);
+  const hs=getHighest(posId), status=getStatus(posId);
+  document.getElementById("detailTitle").textContent=pos.skillSet;
+  document.getElementById("detailMeta").textContent=`Beeline ID: ${pos.id} · ${pos.domain} · ${status}`;
+  const writeActions=canWrite()?`<button class="btn btn-primary btn-sm" onclick="openCandModal()">+ Add Candidate</button>`:"";
+  document.getElementById("detailBody").innerHTML=`
+    <div class="info-grid">
+      <div class="info-box"><div class="info-box-label">Hiring Manager</div><div class="info-box-value">${pos.manager}</div></div>
+      <div class="info-box"><div class="info-box-label">SPOC</div><div class="info-box-value">${pos.spoc||"—"}</div></div>
+      <div class="info-box"><div class="info-box-label">Location</div><div class="info-box-value">${pos.location}</div></div>
+      <div class="info-box"><div class="info-box-label">Domain</div><div class="info-box-value">${pos.domain}</div></div>
+      <div class="info-box"><div class="info-box-label">Date Opened</div><div class="info-box-value">${pos.openedDate}</div></div>
+      <div class="info-box"><div class="info-box-label">Days Open</div><div class="info-box-value" style="color:${daysSince(pos.openedDate)>=3?"#ef4444":"#10b981"}">${daysSince(pos.openedDate)} days</div></div>
+    </div>
+    ${hs?`<div style="margin-bottom:16px"><div class="sec-title">📊 Pipeline Progress</div><div class="pipeline-steps">${pipelineStepsHTML(hs)}</div></div>`:""}
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="sec-title">👥 Candidates (${cc.length})</div>
+        ${writeActions}
+      </div>
+      ${cc.length===0?`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">No profiles shared yet</div></div>`:
+      cc.map(c=>`<div class="cand-card">
+        <div class="cand-card-top">
+          <div>
+            <div class="cand-name">${c.name}</div>
+            <div class="meta-chips">
+              <span class="meta-chip">🎓 ${c.yearsExp||"—"} yrs</span>
+              <span class="meta-chip">📍 ${c.location||"—"}</span>
+              <span class="meta-chip">⏱ ${c.noticePeriod||"—"}</span>
+              ${c.interviewDate?`<span class="meta-chip" style="background:#ede9fe;border-color:#c4b5fd;color:#5b21b6">📅 ${c.interviewDate} ${c.interviewTime||""}</span>`:""}
+            </div>
+          </div>
+          ${canWrite()?`<button class="btn btn-danger btn-sm" onclick="deleteCand('${c.id}','${posId}')">✕</button>`:""}
+        </div>
+        ${canWrite()?`<div style="display:flex;align-items:center;gap:8px;margin-top:9px;flex-wrap:wrap">
+          <span style="font-size:11.5px;color:#6b7db3;font-weight:500">Stage:</span>
+          <select class="stage-sel" onchange="updateCandStage('${c.id}','${posId}',this.value)">
+            ${STAGES.map(s=>`<option value="${s}" ${c.stage===s?"selected":""}>${s}</option>`).join("")}
+          </select>
+          ${stageBadgeHTML(c.stage)}
+        </div>`:`<div style="margin-top:8px">${stageBadgeHTML(c.stage)}</div>`}
+        ${c.lastUpdated?`<div style="font-size:10.5px;color:#9ca3af;margin-top:5px">Updated: ${c.lastUpdated}</div>`:""}
+      </div>`).join("")}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SAVE ACTIONS
+// ═══════════════════════════════════════════════════════════
+async function saveCandidate(){
+  if(!canWrite()){showToast("Read-only access","error");return;}
+  const name=document.getElementById("cName").value.trim();
+  if(!name||!selectedPosId){showToast("Enter candidate name","error");return;}
+  const stage=document.getElementById("cStage").value;
+  const intDate=document.getElementById("cIntDate").value;
+  const intTime=document.getElementById("cIntTime").value;
+  const intSpoc=document.getElementById("cIntSpoc").value;
+  const btn=document.getElementById("saveCandBtn"); btn.disabled=true; btn.textContent="Saving…";
+  const data={id:uid(),positionId:selectedPosId,name,yearsExp:document.getElementById("cExp").value.trim(),location:document.getElementById("cLoc").value.trim(),noticePeriod:document.getElementById("cNotice").value.trim(),stage,interviewDate:intDate,interviewTime:intTime,user:currentUser?.Name};
+  try{
+    await api("POST",{action:"saveCandidate",data});
+    candidates.push({...data,lastUpdated:today()});
+    // Save interview if scheduled
+    if(INTERVIEW_STAGES.includes(stage)&&intDate){
+      const iv={id:uid(),positionId:selectedPosId,candidateId:data.id,candidateName:name,stage,interviewDate:intDate,interviewTime:intTime,spoc:intSpoc,status:"Scheduled"};
+      await api("POST",{action:"saveInterview",data:iv});
+      interviews.push(iv);
+    }
+    // Auto-create employee if Onboarded
+    if(stage==="Onboarded") promptCreateEmployee(data);
+    renderAll(); closeCandModal(); showToast("✅ Candidate added","success");
+  }catch(e){showToast("❌ Save failed","error");}
+  finally{btn.disabled=false;btn.textContent="Add Candidate";}
+}
+
+async function updateCandStage(candId,posId,newStage){
+  if(!canWrite()){showToast("Read-only access","error");return;}
+  const cand=candidates.find(c=>c.id===candId); if(!cand)return;
+  const old=cand.stage; cand.stage=newStage; cand.lastUpdated=today();
+  renderDetailPanel(posId); updateNotifBadge();
+  try{
+    await api("POST",{action:"updateCandidate",data:{...cand,user:currentUser?.Name}});
+    showToast(`✅ ${cand.name} → ${newStage}`,"success");
+    if(newStage==="Onboarded") promptCreateEmployee(cand);
+  }catch(e){cand.stage=old;renderDetailPanel(posId);showToast("❌ Update failed","error");}
+}
+
+async function deleteCand(candId,posId){
+  if(!canWrite())return;
+  if(!confirm("Remove this candidate?"))return;
+  try{await api("POST",{action:"deleteCandidate",id:candId});candidates=candidates.filter(c=>c.id!==candId);renderAll();showToast("Candidate removed","info");}
+  catch(e){showToast("❌ Failed","error");}
+}
+
+function promptCreateEmployee(cand){
+  if(!confirm(`🎉 ${cand.name} has been Onboarded!\nWould you like to add them to the Employees list now?`))return;
+  openEmpModalWithData(cand);
+}
+
+async function savePosition(){
+  if(!canWrite())return;
+  const skill=document.getElementById("pSkill").value.trim(), mgr=document.getElementById("pManager").value.trim();
+  if(!skill||!mgr){showToast("Skill Set and Manager are required","error");return;}
+  const btn=document.getElementById("savePosBtn"); btn.disabled=true; btn.textContent="Saving…";
+  const data={id:document.getElementById("pId").value.trim()||("POS-"+Date.now()),manager:mgr,spoc:document.getElementById("pSpoc").value,skillSet:skill,location:document.getElementById("pLoc").value.trim(),domain:document.getElementById("pDomain").value,openedDate:document.getElementById("pDate").value,jd:document.getElementById("pJD").value.trim(),status:"Open",user:currentUser?.Name};
+  try{await api("POST",{action:"savePosition",data});positions.unshift(data);renderAll();closePosModal();showToast("✅ Position added","success");}
+  catch(e){showToast("❌ Save failed","error");}
+  finally{btn.disabled=false;btn.textContent="Add Position";}
+}
+
+async function saveEmployee(){
+  if(!canWrite())return;
+  const name=document.getElementById("eName").value.trim();
+  if(!name){showToast("Name is required","error");return;}
+  const team=document.getElementById("eTeam").value;
+  const status=document.getElementById("eStatus").value;
+  const btn=document.getElementById("saveEmpBtn"); btn.disabled=true; btn.textContent="Saving…";
+  const hmName = team==="Onsite"?document.getElementById("eHMName").value.trim():document.getElementById("eHMNameOffsite").value.trim();
+  const data={
+    id:editingEmpId||uid(), name,
+    ggsEmpId:document.getElementById("eGGSId").value.trim(),
+    phone:document.getElementById("ePhone").value.trim(),
+    personalEmail:document.getElementById("ePersonalEmail").value.trim(),
+    ggsEmail:document.getElementById("eGGSEmail").value.trim(),
+    doj:document.getElementById("eDOJ").value,
+    skillSet:document.getElementById("eSkill").value.trim(),
+    spoc:document.getElementById("eSpoc").value,
+    team, hmName,
+    catEmail:team==="Onsite"?document.getElementById("eCATEmail").value.trim():"",
+    hmPhone:team==="Onsite"?document.getElementById("eHMPhone").value.trim():"",
+    hmEmail:team==="Onsite"?document.getElementById("eHMEmail").value.trim():"",
+    billRate:team==="Onsite"?document.getElementById("eBillRate").value.trim():"",
+    dojInCat:team==="Onsite"?document.getElementById("eDOJCAT").value:"",
+    yearsInCat:team==="Onsite"?document.getElementById("eYearsCAT").value:"",
+    status,
+    resignDate:document.getElementById("eResignDate").value||"",
+    relievingDate:document.getElementById("eRelievingDate").value||"",
+    user:currentUser?.Name
+  };
+  try{
+    if(editingEmpId){await api("POST",{action:"updateEmployee",data});employees=employees.map(e=>e.id===editingEmpId?data:e);}
+    else{await api("POST",{action:"saveEmployee",data});employees.push(data);}
+    renderAll();closeEmpModal();showToast(`✅ Employee ${editingEmpId?"updated":"added"}`,"success");
+  }catch(e){showToast("❌ Save failed","error");}
+  finally{btn.disabled=false;btn.textContent="Save Employee";}
+}
+
+async function deleteEmployee(id){
+  if(!canWrite())return;
+  if(!confirm("Remove this employee?"))return;
+  try{await api("POST",{action:"deleteEmployee",id});employees=employees.filter(e=>e.id!==id);renderAll();showToast("Employee removed","info");}
+  catch(e){showToast("❌ Failed","error");}
+}
+
+async function saveSpoc(){
+  const name=document.getElementById("sName").value.trim();
+  if(!name){showToast("Name is required","error");return;}
+  const btn=document.getElementById("saveSpocBtn"); btn.disabled=true; btn.textContent="Saving…";
+  const data={id:editingSpocId||("SPOC-"+Date.now()),name,email:document.getElementById("sEmail").value.trim(),phone:document.getElementById("sPhone").value.trim(),permission:document.getElementById("sPerm").value,pin:document.getElementById("sPin").value,active:"Yes"};
+  try{
+    if(editingSpocId){await api("POST",{action:"updateSpoc",data:{...data,ID:editingSpocId}});spocs=spocs.map(s=>(s.ID===editingSpocId||s.Name===editingSpocId)?{...s,...data,Name:name,Permission:data.permission,PIN:data.pin}:s);}
+    else{await api("POST",{action:"saveSpoc",data});spocs.push({ID:data.id,Name:data.name,Email:data.email,Phone:data.phone,Permission:data.permission,PIN:data.pin,Active:"Yes"});}
+    renderAll();closeSpocModal();showToast(`✅ SPOC ${editingSpocId?"updated":"added"}`,"success");
+  }catch(e){showToast("❌ Save failed","error");}
+  finally{btn.disabled=false;btn.textContent="Save SPOC";}
+}
+
+async function deleteSpoc(id){
+  if(!confirm("Remove this SPOC?"))return;
+  try{await api("POST",{action:"deleteSpoc",id});spocs=spocs.filter(s=>s.ID!==id&&s.Name!==id);renderAll();showToast("SPOC removed","info");}
+  catch(e){showToast("❌ Failed","error");}
+}
+
+async function saveDomain(){
+  const name=document.getElementById("dName").value.trim();
+  if(!name){showToast("Domain name required","error");return;}
+  const data={id:"DOM-"+Date.now(),name,active:"Yes"};
+  try{await api("POST",{action:"saveDomain",data});domains.push({ID:data.id,Name:name,Active:"Yes"});renderAll();closeDomainModal();showToast("✅ Domain added","success");}
+  catch(e){showToast("❌ Failed","error");}
+}
+
+async function deleteDomain(id){
+  if(!confirm("Remove this domain?"))return;
+  try{await api("POST",{action:"deleteDomain",id});domains=domains.filter(d=>d.ID!==id&&d.Name!==id);renderAll();showToast("Domain removed","info");}
+  catch(e){showToast("❌ Failed","error");}
+}
+
+// ═══════════════════════════════════════════════════════════
+// MODAL OPEN/CLOSE
+// ═══════════════════════════════════════════════════════════
+function openCandModal(){
+  document.getElementById("cStage").value=STAGES[0];
+  document.getElementById("interviewFields").style.display="none";
+  document.getElementById("cStage").onchange=function(){ document.getElementById("interviewFields").style.display=INTERVIEW_STAGES.includes(this.value)?"block":"none"; };
+  document.getElementById("candModal").style.display="flex";
+}
+function closeCandModal(){ document.getElementById("candModal").style.display="none"; ["cName","cExp","cLoc","cNotice","cIntDate","cIntTime"].forEach(id=>document.getElementById(id).value=""); }
+
+function openPosModal(){ populateSelects(); document.getElementById("posModal").style.display="flex"; }
+function closePosModal(){ document.getElementById("posModal").style.display="none"; ["pId","pSkill","pManager","pLoc","pJD"].forEach(id=>document.getElementById(id).value=""); document.getElementById("pDate").value=today(); }
+
+function openEmpModal(){ editingEmpId=null; document.getElementById("empModalTitle").textContent="Add Employee"; document.getElementById("empModal").style.display="flex"; populateSelects(); }
+function openEmpModalWithData(cand){ openEmpModal(); document.getElementById("eName").value=cand.name||""; document.getElementById("eSkill").value=(positions.find(p=>p.id===cand.positionId)||{}).skillSet||""; }
+function openEditEmpModal(id){ editingEmpId=id; const e=employees.find(emp=>emp.id===id); if(!e)return; document.getElementById("empModalTitle").textContent="Edit Employee"; document.getElementById("empModal").style.display="flex"; populateSelects(); setTimeout(()=>{ document.getElementById("eName").value=e.name; document.getElementById("eGGSId").value=e.ggsEmpId; document.getElementById("ePhone").value=e.phone; document.getElementById("ePersonalEmail").value=e.personalEmail; document.getElementById("eGGSEmail").value=e.ggsEmail; document.getElementById("eDOJ").value=e.doj; document.getElementById("eSkill").value=e.skillSet; document.getElementById("eSpoc").value=e.spoc; document.getElementById("eTeam").value=e.team; toggleEmpTeamFields(); if(e.team==="Onsite"){ document.getElementById("eHMName").value=e.hmName; document.getElementById("eCATEmail").value=e.catEmail; document.getElementById("eHMPhone").value=e.hmPhone; document.getElementById("eHMEmail").value=e.hmEmail; document.getElementById("eBillRate").value=e.billRate; document.getElementById("eDOJCAT").value=e.dojInCat; calcYearsInCAT(); } else if(e.team==="Offsite"){ document.getElementById("eHMNameOffsite").value=e.hmName; } document.getElementById("eStatus").value=e.status; toggleResignFields(); if(e.status==="Resigned"||e.status==="Relieved"){ document.getElementById("eResignDate").value=e.resignDate; document.getElementById("eRelievingDate").value=e.relievingDate; } },100); }
+function closeEmpModal(){ editingEmpId=null; document.getElementById("empModal").style.display="none"; }
+
+function openSpocModal(){ editingSpocId=null; document.getElementById("spocModalTitle").textContent="Add SPOC"; document.getElementById("spocModal").style.display="flex"; }
+function openEditSpocModal(id){ editingSpocId=id; const s=spocs.find(sp=>sp.ID===id||sp.Name===id); if(!s)return; document.getElementById("spocModalTitle").textContent="Edit SPOC"; document.getElementById("sName").value=s.Name; document.getElementById("sEmail").value=s.Email||""; document.getElementById("sPhone").value=s.Phone||""; document.getElementById("sPerm").value=s.Permission||"ReadWrite"; document.getElementById("sPin").value=""; document.getElementById("spocModal").style.display="flex"; }
+function closeSpocModal(){ editingSpocId=null; document.getElementById("spocModal").style.display="none"; ["sName","sEmail","sPhone","sPin"].forEach(id=>document.getElementById(id).value=""); }
+
+function openDomainModal(){ document.getElementById("dName").value=""; document.getElementById("domainModal").style.display="flex"; }
+function closeDomainModal(){ document.getElementById("domainModal").style.display="none"; }
+
+function toggleEmpTeamFields(){ const t=document.getElementById("eTeam").value; document.getElementById("onsiteFields").style.display=t==="Onsite"?"block":"none"; document.getElementById("offsiteFields").style.display=t==="Offsite"?"block":"none"; }
+function toggleResignFields(){ const s=document.getElementById("eStatus").value; document.getElementById("resignFields").style.display=(s==="Resigned"||s==="Relieved")?"grid":"none"; }
+
+// ═══════════════════════════════════════════════════════════
+// IMPORT
+// ═══════════════════════════════════════════════════════════
+function openImportModal(){ resetImport(); populateSelects(); document.getElementById("importModal").style.display="flex"; }
+function closeImportModal(){ document.getElementById("importModal").style.display="none"; resetImport(); }
+function resetImport(){ importedRows=[]; document.getElementById("importStep1").style.display="block"; document.getElementById("importStep2").style.display="none"; document.getElementById("importBtn").style.display="none"; document.getElementById("fileInput").value=""; }
+function handleFileDrop(e){ e.preventDefault(); const f=e.dataTransfer.files[0]; if(f)processXLS(f); }
+function handleFileSelect(e){ const f=e.target.files[0]; if(f)processXLS(f); }
+function processXLS(file){
+  if(!file.name.match(/\.(xlsx|xls)$/i)){showToast("Please upload an Excel file","error");return;}
+  showLoad("Reading Excel…");
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+      hideLoad(); if(!rows.length){showToast("No data found","error");return;}
+      parsePreview(rows);
+    }catch(e){hideLoad();showToast("Could not read file","error");}
+  };
+  r.readAsArrayBuffer(file);
+}
+function parsePreview(rows){
+  const keys=Object.keys(rows[0]);
+  const fc=(...opts)=>keys.find(k=>opts.some(o=>k.toLowerCase().includes(o.toLowerCase())))||"";
+  const cId=fc("beeline","id"),cMgr=fc("manager"),cSkill=fc("skill"),cLoc=fc("location","loc"),cDom=fc("domain");
+  const existing=new Set(positions.map(p=>String(p.id).trim()));
+  const warns=[]; const parsed=[];
+  rows.forEach((row,i)=>{
+    const id=String(row[cId]||"").trim(),mgr=String(row[cMgr]||"").trim(),skill=String(row[cSkill]||"").trim(),loc=String(row[cLoc]||"").trim(),domain=String(row[cDom]||"Digital").trim();
+    if(!skill&&!mgr)return;
+    if(id&&existing.has(id))warns.push(`Row ${i+2}: ID "${id}" already exists — will skip`);
+    parsed.push({id,manager:mgr,skillSet:skill,location:loc,domain,_dup:id&&existing.has(id),_row:i+2});
+  });
+  importedRows=parsed.filter(r=>!r._dup);
+  const skipped=parsed.length-importedRows.length;
+  document.getElementById("importSummary").innerHTML=`<span style="color:#10b981;font-weight:700">${importedRows.length} positions ready</span>${skipped?` · <span style="color:#f59e0b">${skipped} duplicates skipped</span>`:""}`;
+  const wDiv=document.getElementById("importWarnings"); if(warns.length){wDiv.style.display="block";wDiv.innerHTML=`<strong>⚠️ Notes:</strong><br>${warns.slice(0,5).map(w=>`• ${w}`).join("<br>")}`;}else{wDiv.style.display="none";}
+  document.getElementById("previewHead").innerHTML=`<tr>${["#","Beeline ID","Manager","Skill Set","Location","Domain"].map(h=>`<th style="padding:7px 10px;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:#f8faff">${h}</th>`).join("")}</tr>`;
+  document.getElementById("previewBody").innerHTML=parsed.slice(0,5).map(r=>`<tr style="${r._dup?"opacity:.4":""}"><td style="padding:6px 10px;border-bottom:1px solid #f0f4ff;font-size:11px;color:#9ca3af">${r._row}</td><td style="padding:6px 10px;border-bottom:1px solid #f0f4ff"><code style="font-size:10px;background:#f0f4ff;padding:2px 4px;border-radius:3px">${r.id||"auto"}</code></td><td style="padding:6px 10px;border-bottom:1px solid #f0f4ff;font-size:11.5px">${r.manager}</td><td style="padding:6px 10px;border-bottom:1px solid #f0f4ff;font-size:11.5px;font-weight:600">${r.skillSet}</td><td style="padding:6px 10px;border-bottom:1px solid #f0f4ff;font-size:11px">${r.location}</td><td style="padding:6px 10px;border-bottom:1px solid #f0f4ff">${r._dup?`<span style="color:#f59e0b;font-size:11px">⚠️ Skip</span>`:`<span style="color:#10b981;font-size:11px">✅</span>`}</td></tr>`).join("");
+  document.getElementById("importStep1").style.display="none"; document.getElementById("importStep2").style.display="block";
+  document.getElementById("importBtn").style.display=importedRows.length>0?"inline-flex":"none";
+  document.getElementById("importBtn").textContent=`📥 Import ${importedRows.length} Positions`;
+}
+async function runImport(){
+  if(!importedRows.length)return;
+  const btn=document.getElementById("importBtn"); btn.disabled=true;
+  const openedDate=document.getElementById("importDate").value||today();
+  const spoc=document.getElementById("importSpocSel").value;
+  showLoad(`Importing ${importedRows.length} positions…`);
+  const rows=importedRows.map((r,i)=>({id:r.id||("POS-"+Date.now()+i),manager:r.manager,spoc,skillSet:r.skillSet,location:r.location,domain:r.domain,openedDate,status:"Open",jd:""}));
+  try{
+    await api("POST",{action:"bulkSavePositions",data:rows});
+    rows.forEach(r=>positions.unshift(r));
+    renderAll(); closeImportModal(); showToast(`✅ ${rows.length} positions imported!`,"success");
+  }catch(e){showToast("❌ Import failed","error");}
+  finally{hideLoad(); btn.disabled=false;}
+}
+
+// ═══════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════
+function scheduleNotifications(){
+  if(!("Notification" in window))return;
+  Notification.requestPermission().then(perm=>{
+    if(perm!=="granted")return;
+    checkInterviewNotifications();
+    setInterval(checkInterviewNotifications, 60*1000); // check every minute
+  });
+}
+
+function checkInterviewNotifications(){
+  const now=new Date();
+  const todayStr=today();
+  interviews.filter(iv=>iv.InterviewDate===todayStr||iv.interviewDate===todayStr).forEach(iv=>{
+    const date=iv.InterviewDate||iv.interviewDate;
+    const time=iv.InterviewTime||iv.interviewTime;
+    if(!time)return;
+    const [h,m]=time.split(":").map(Number);
+    const intTime=new Date(); intTime.setHours(h,m,0,0);
+    const diff=(intTime-now)/60000; // minutes
+    if(diff>0&&diff<=60&&diff>58){
+      new Notification("⏰ Interview in 1 Hour — GGS Tracker",{body:`${iv.CandidateName||iv.candidateName} · ${iv.Stage||iv.stage} · ${time}`,icon:"https://www.google.com/favicon.ico"});
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════
+function toggleNotif(){ const p=document.getElementById("notifPanel"); p.style.display=p.style.display==="none"?"block":"none"; event.stopPropagation(); }
+function closeNotif(){ document.getElementById("notifPanel").style.display="none"; }
+function showLoad(msg){ document.getElementById("loadingOverlay").style.display="flex"; document.getElementById("loadingText").textContent=msg||"Loading…"; }
+function hideLoad(){ document.getElementById("loadingOverlay").style.display="none"; }
+function showToast(msg,type="info"){ const w=document.getElementById("toastWrap"); const el=document.createElement("div"); el.className=`toast ${type}`; el.textContent=msg; w.appendChild(el); setTimeout(()=>el.remove(),3500); }
+</script>
+</body>
+</html>
