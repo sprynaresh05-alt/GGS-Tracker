@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <title>GGS Recruitment Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
@@ -229,8 +232,8 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
     <div class="login-logo">GGS</div>
     <div class="login-title">Recruitment Tracker</div>
     <div class="login-sub">Please select your name and enter your PIN</div>
-    <select class="login-select" id="loginSpoc"><option value="">— Select your name —</option></select>
-    <div id="loginStatus" style="font-size:12px;color:#6b7db3;margin-bottom:8px;min-height:18px">Loading users…</div>
+    <select class="login-select" id="loginSpoc"><option value="">— Select your name —</option><option value="SPOC-001">Admin</option></select>
+    <div id="loginStatus" style="font-size:12px;color:#6b7db3;margin-bottom:8px;min-height:18px"></div>
     <input class="login-input" type="password" id="loginPin" maxlength="6" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()"/>
     <button class="login-btn" onclick="doLogin()">Login →</button>
     <div class="login-err" id="loginErr"></div>
@@ -722,7 +725,7 @@ function getHighest(posId){
 }
 function getNotifs(){ return positions.filter(p=>{ if(getStatus(p.id)==="Filled")return false; const cc=candidates.filter(c=>c.positionId===p.id); if(!cc.length)return daysSince(p.openedDate)>=3; const last=cc.reduce((mx,c)=>{const d=new Date(c.lastUpdated||p.openedDate);return d>mx?d:mx;},new Date(p.openedDate||"2000-01-01")); return Math.floor((new Date()-last)/86400000)>=3; }); }
 function stageBadgeHTML(stage){ if(!stage)return""; const s=STAGE_STYLE[stage]||{bg:"#f3f4f6",color:"#374151",dot:"#9ca3af"}; return `<span class="stage-badge" style="background:${s.bg};color:${s.color}"><span class="dot" style="background:${s.dot}"></span>${stage}</span>`; }
-function pipelineStepsHTML(hs){ const idx=ACTIVE_STAGES.indexOf(hs); return ACTIVE_STAGES.map((s,i)=>{const st=STAGE_STYLE[s],active=i<=idx;return `<div class="pipeline-step${active?" active":""}" style="${active?`background:${st.dot}`;""}">${s.split(" ")[0]}</div>`;}).join(""); }
+function pipelineStepsHTML(hs){ const idx=ACTIVE_STAGES.indexOf(hs); return ACTIVE_STAGES.map((s,i)=>{const st=STAGE_STYLE[s],active=i<=idx; const bg=active?"background:"+st.dot:""; return '<div class="pipeline-step'+(active?" active":"")+'" style="'+bg+'">'+s.split(" ")[0]+'</div>';}).join(""); }
 function canWrite(){ return !currentUser||currentUser.Permission!=="Read"; }
 
 function getQuarter(dateStr){
