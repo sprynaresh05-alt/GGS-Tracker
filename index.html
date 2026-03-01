@@ -483,7 +483,7 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
 
 <!-- TOAST & LOADING -->
 <div class="toast-wrap" id="toastWrap"></div>
-<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div class="loading-text" id="loadingText">Connecting…</div></div>
+<div class="loading-overlay" id="loadingOverlay" style="display:none"><div class="loading-spinner"></div><div class="loading-text" id="loadingText">Connecting…</div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -538,7 +538,6 @@ window.onload = () => {
   spocs = [{ ID:"SPOC-001", Name:"Admin", Email:"", Phone:"", Permission:"ReadWrite", PIN:"1234", Active:"Yes" }];
   domains = [{ ID:"DOM-001", Name:"Digital", Active:"Yes"}, {ID:"DOM-002", Name:"Embedded", Active:"Yes"}];
   populateLoginSpocs();
-  hideLoad();
   // Silently try to load real SPOCs from Google Sheets in background
   fetchSpocsBackground();
 };
