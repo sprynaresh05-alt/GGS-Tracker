@@ -230,6 +230,7 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
     <div class="login-title">Recruitment Tracker</div>
     <div class="login-sub">Please select your name and enter your PIN</div>
     <select class="login-select" id="loginSpoc"><option value="">— Select your name —</option></select>
+    <div id="loginStatus" style="font-size:12px;color:#6b7db3;margin-bottom:8px;min-height:18px">Loading users…</div>
     <input class="login-input" type="password" id="loginPin" maxlength="6" placeholder="••••" onkeydown="if(event.key==='Enter')doLogin()"/>
     <button class="login-btn" onclick="doLogin()">Login →</button>
     <div class="login-err" id="loginErr"></div>
@@ -527,18 +528,33 @@ let importedRows=[];
 // INIT
 // ═══════════════════════════════════════════════════════════
 window.onload = () => {
-  document.getElementById("pDate").value = today();
-  document.getElementById("importDate").value = today();
-  STAGES.forEach(s => {
-    const opt = document.createElement("option");
-    opt.value=s; opt.textContent=s;
-    document.getElementById("cStage").appendChild(opt);
-  });
-  // Show login immediately with default Admin — never block on network
-  spocs = [{ ID:"SPOC-001", Name:"Admin", Email:"", Phone:"", Permission:"ReadWrite", PIN:"1234", Active:"Yes" }];
-  domains = [{ ID:"DOM-001", Name:"Digital", Active:"Yes"}, {ID:"DOM-002", Name:"Embedded", Active:"Yes"}];
-  populateLoginSpocs();
-  // Silently try to load real SPOCs from Google Sheets in background
+  // ── Step 1: Show login immediately with defaults ──
+  spocs = [
+    { ID:"SPOC-001", Name:"Admin", Email:"", Phone:"", Permission:"ReadWrite", PIN:"1234", Active:"Yes" }
+  ];
+  domains = [
+    { ID:"DOM-001", Name:"Digital", Active:"Yes"},
+    { ID:"DOM-002", Name:"Embedded", Active:"Yes"}
+  ];
+  populateLoginSpocs(); // Show Admin in dropdown right away
+
+  // ── Step 2: Set form defaults safely ──
+  const pDateEl = document.getElementById("pDate");
+  const importDateEl = document.getElementById("importDate");
+  if(pDateEl) pDateEl.value = today();
+  if(importDateEl) importDateEl.value = today();
+
+  // ── Step 3: Populate stage dropdown ──
+  const cStageEl = document.getElementById("cStage");
+  if(cStageEl) {
+    STAGES.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value=s; opt.textContent=s;
+      cStageEl.appendChild(opt);
+    });
+  }
+
+  // ── Step 4: Silently fetch real SPOCs from Google Sheets ──
   fetchSpocsBackground();
 };
 
@@ -603,23 +619,40 @@ function jsonpFetch(action){
 }
 
 async function fetchSpocsBackground(){
-  // Try to silently load SPOCs from Google Sheets — don't block login
+  // Try multiple methods to load SPOCs — never block login
   try {
+    // Method 1: Normal fetch
     const ctrl = new AbortController();
-    setTimeout(()=>ctrl.abort(), 8000);
+    setTimeout(()=>ctrl.abort(), 10000);
     const res = await fetch(SCRIPT_URL+"?action=getAll&t="+Date.now(), {redirect:"follow", signal:ctrl.signal});
-    const data = await res.json();
+    const text = await res.text();
+    const data = JSON.parse(text);
     if(data && data.spocs && data.spocs.length>0){
       applyData(data);
-      populateLoginSpocs(); // refresh dropdown with real SPOCs
+      populateLoginSpocs();
+      const s = document.getElementById("loginStatus");
+      if(s) s.textContent = "✅ " + spocs.length + " users loaded";
+      return;
     }
-  } catch(e) {
-    // Silently fail — login still works with default Admin
+  } catch(e1) {
+    // Method 1 failed, try JSONP
+    try {
+      const data = await jsonpFetch("getAll");
+      if(data && data.spocs && data.spocs.length>0){
+        applyData(data);
+        populateLoginSpocs();
+        return;
+      }
+    } catch(e2) {
+      // Both failed — show refresh button
+      const statusEl = document.getElementById("loginStatus");
+      if(statusEl) statusEl.innerHTML = '<span style="color:#f59e0b;font-size:12px">⚠️ Could not load users from server. <a href="javascript:fetchSpocsBackground()" style="color:var(--blue)">Retry</a></span>';
+    }
   }
 }
 
 async function loadDataForLogin(){
-  // No longer used for blocking load
+  // No longer used
 }
 
 async function loadData(){
