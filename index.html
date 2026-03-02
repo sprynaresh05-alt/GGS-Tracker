@@ -215,6 +215,11 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
 .jd-popup{background:#fff;border-radius:14px;padding:28px;width:100%;max-width:600px;box-shadow:0 20px 60px rgba(26,43,95,.25);max-height:80vh;overflow-y:auto}
 .jd-content{font-size:13.5px;line-height:1.8;color:var(--text);white-space:pre-wrap;background:var(--bg);border-radius:8px;padding:16px;border:1px solid var(--border);margin-top:14px}
 
+/* ── ADMIN SUB TABS ── */
+.admin-sub-btn{background:none;border:none;border-bottom:3px solid transparent;padding:8px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;font-family:"DM Sans",sans-serif;transition:all .2s;margin-bottom:-2px}
+.admin-sub-btn:hover{color:var(--blue)}
+.admin-sub-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+
 /* ── MISC ── */
 .alert-banner{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:11px 15px;margin-bottom:14px;display:flex;align-items:center;gap:9px;font-size:12.5px;color:#92400e}
 .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
@@ -248,7 +253,7 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
       <div><div class="app-title">Recruitment Tracker</div><div class="app-sub">Talent Acquisition · Internal Tool</div></div>
     </div>
     <div class="header-right">
-      <div class="user-chip"><span class="user-dot"></span><span id="userChipName">User</span></div>
+      <div class="user-chip"><span class="user-dot"></span><span id="userChipName">User</span> <span id="userRoleChip" style="opacity:.7;font-size:10px"></span></div>
       <button class="sync-btn" id="syncBtn" onclick="loadData()"><span>🔄</span> Sync</button>
       <div style="position:relative">
         <button class="notif-btn" onclick="toggleNotif()">🔔<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
@@ -257,14 +262,15 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
           <div class="notif-list" id="notifList"></div>
         </div>
       </div>
+      <button class="sync-btn" onclick="doLogout()" style="background:rgba(239,68,68,.25);border:1px solid rgba(239,68,68,.4)">🚪 Logout</button>
     </div>
   </header>
   <nav class="nav" id="mainNav">
-    <button class="nav-btn" onclick="switchView('admin',this)">⚙️ Admin</button>
-    <button class="nav-btn active" onclick="switchView('dashboard',this)">📊 Dashboard</button>
-    <button class="nav-btn" onclick="switchView('positions',this)">📋 Positions</button>
-    <button class="nav-btn" onclick="switchView('pipeline',this)">🔄 Pipeline</button>
-    <button class="nav-btn" onclick="switchView('employees',this)">👥 Employees</button>
+    <button class="nav-btn tab-dashboard active" onclick="switchView('dashboard',this)">📊 Dashboard</button>
+    <button class="nav-btn tab-positions" onclick="switchView('positions',this)">📋 Positions</button>
+    <button class="nav-btn tab-screening" onclick="switchView('screening',this)">🔍 Screening</button>
+    <button class="nav-btn tab-pipeline" onclick="switchView('pipeline',this)">🔄 Pipeline</button>
+    <button class="nav-btn tab-hr" onclick="switchView('hr',this)">👥 HR</button>
   </nav>
   <main class="main" id="mainContent" onclick="closeNotif()"></main>
 </div>
@@ -485,6 +491,88 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
   </div>
 </div>
 
+<!-- ADMIN PANEL MODAL -->
+<div class="modal-overlay" id="adminModal" style="display:none" onclick="closeAdminModal()">
+  <div class="modal modal-lg" style="max-width:700px;max-height:92vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div class="modal-title" style="margin:0">⚙️ Admin Panel</div>
+      <button class="close-btn" style="background:var(--border);color:var(--text);width:32px;height:32px" onclick="closeAdminModal()">×</button>
+    </div>
+    <!-- Admin sub tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:18px;border-bottom:2px solid var(--border);padding-bottom:0">
+      <button class="admin-sub-btn active" onclick="switchAdminTab('users',this)">👥 Users</button>
+      <button class="admin-sub-btn" onclick="switchAdminTab('roles',this)">🔐 Roles</button>
+      <button class="admin-sub-btn" onclick="switchAdminTab('domains',this)">🌐 Domains</button>
+      <button class="admin-sub-btn" onclick="switchAdminTab('teams',this)">🏢 Teams</button>
+    </div>
+    <div id="adminTabContent"></div>
+  </div>
+</div>
+
+<!-- ADD/EDIT USER MODAL -->
+<div class="modal-overlay" id="userModal" style="display:none" onclick="closeUserModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title" id="userModalTitle">Add User</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="uName" placeholder="Full Name"/></div>
+      <div class="form-group"><label class="form-label">Role *</label><select class="form-input" id="uRole"></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="uEmail" placeholder="user@ggs.com"/></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="uPhone" placeholder="Phone No"/></div>
+      <div class="form-group"><label class="form-label">PIN (4-6 digits) *</label><input class="form-input" id="uPin" type="password" placeholder="e.g. 1234" maxlength="6"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeUserModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveUserBtn" onclick="saveUser()">Save User</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ROLE MODAL -->
+<div class="modal-overlay" id="roleModal" style="display:none" onclick="closeRoleModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Add Role</div>
+    <div class="form-group"><label class="form-label">Role Name *</label><input class="form-input" id="rName" placeholder="e.g. Recruiter, HR, Screener"/></div>
+    <div class="form-group"><label class="form-label">Tab Access</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px" id="roleTabChecks">
+        ${["Dashboard","Positions","Screening","Pipeline","HR"].map(t=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" value="${t.toLowerCase()}" style="cursor:pointer"/> ${t}</label>`).join("")}
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeRoleModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRole()">Add Role</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT POSITION MODAL -->
+<div class="modal-overlay" id="editPosModal" style="display:none" onclick="closeEditPosModal()">
+  <div class="modal modal-lg" onclick="event.stopPropagation()">
+    <div class="modal-title">✏️ Edit Position</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Beeline ID</label><input class="form-input" id="epId" readonly style="background:#f0f4ff;color:var(--muted)"/></div>
+      <div class="form-group"><label class="form-label">Domain *</label><select class="form-input" id="epDomain"></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Skill Set *</label><input class="form-input" id="epSkill"/></div>
+      <div class="form-group"><label class="form-label">Hiring Manager *</label><input class="form-input" id="epManager"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">SPOC</label><select class="form-input" id="epSpoc"></select></div>
+      <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="epLoc"/></div>
+    </div>
+    <div class="form-group"><label class="form-label">Date Opened</label><input type="date" class="form-input" id="epDate"/></div>
+    <div class="form-group"><label class="form-label">Job Description</label>
+      <textarea class="form-input" id="epJD" rows="4" style="resize:vertical"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEditPosModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveEditPosBtn" onclick="saveEditPosition()">Update Position</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST & LOADING -->
 <div class="toast-wrap" id="toastWrap"></div>
 <div class="loading-overlay" id="loadingOverlay" style="display:none"><div class="loading-spinner"></div><div class="loading-text" id="loadingText">Connecting…</div></div>
@@ -496,24 +584,22 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
 // ═══════════════════════════════════════════════════════════
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrRKuubyOyLD8ooLjZt4YR_ai9hrpAA951PMurYHEtXmTzuy3kny_SSrDxVGTWtqyh/exec";
 
-const STAGES = ["Profiles Shared","L1 Scheduled","L1 Cleared","L2 Scheduled","L2 Cleared","Offer Extended","Onboarded","Screen Rejected","L1 Rejected","L2 Rejected","Hold","Dropped"];
-const ACTIVE_STAGES = ["Profiles Shared","L1 Scheduled","L1 Cleared","L2 Scheduled","L2 Cleared","Offer Extended","Onboarded"];
-const REJECTED_STAGES = ["Screen Rejected","L1 Rejected","L2 Rejected","Hold","Dropped"];
+const STAGES = ["Screen Rejected","L1 Scheduled","L1 Rejected","L2 Scheduled","L2 Rejected","Hold","Offer Extended","Offer Released","Onboarded","Dropped"];
+const ACTIVE_STAGES = ["L1 Scheduled","L1 Rejected","L2 Scheduled","L2 Rejected","Hold","Offer Extended","Offer Released","Onboarded","Dropped"];
+const REJECTED_STAGES = ["Screen Rejected","L1 Rejected","L2 Rejected","Dropped"];
 const INTERVIEW_STAGES = ["L1 Scheduled","L2 Scheduled"];
 
 const STAGE_STYLE = {
-  "Profiles Shared": {bg:"#dbeafe",color:"#1e40af",dot:"#3b82f6"},
-  "L1 Scheduled":    {bg:"#ede9fe",color:"#5b21b6",dot:"#8b5cf6"},
-  "L1 Cleared":      {bg:"#cffafe",color:"#155e75",dot:"#06b6d4"},
-  "L2 Scheduled":    {bg:"#fef3c7",color:"#92400e",dot:"#f59e0b"},
-  "L2 Cleared":      {bg:"#d1fae5",color:"#065f46",dot:"#10b981"},
-  "Offer Extended":  {bg:"#ffedd5",color:"#9a3412",dot:"#f97316"},
-  "Onboarded":       {bg:"#dcfce7",color:"#14532d",dot:"#22c55e"},
   "Screen Rejected": {bg:"#fee2e2",color:"#991b1b",dot:"#ef4444"},
-  "L1 Rejected":     {bg:"#fee2e2",color:"#991b1b",dot:"#ef4444"},
-  "L2 Rejected":     {bg:"#fee2e2",color:"#991b1b",dot:"#ef4444"},
+  "L1 Scheduled":    {bg:"#ede9fe",color:"#5b21b6",dot:"#8b5cf6"},
+  "L1 Rejected":     {bg:"#fecaca",color:"#7f1d1d",dot:"#dc2626"},
+  "L2 Scheduled":    {bg:"#fef3c7",color:"#92400e",dot:"#f59e0b"},
+  "L2 Rejected":     {bg:"#fde68a",color:"#78350f",dot:"#d97706"},
   "Hold":            {bg:"#f3f4f6",color:"#374151",dot:"#9ca3af"},
-  "Dropped":         {bg:"#fef3c7",color:"#92400e",dot:"#f59e0b"},
+  "Offer Extended":  {bg:"#ffedd5",color:"#9a3412",dot:"#f97316"},
+  "Offer Released":  {bg:"#cffafe",color:"#155e75",dot:"#06b6d4"},
+  "Onboarded":       {bg:"#dcfce7",color:"#14532d",dot:"#22c55e"},
+  "Dropped":         {bg:"#f5f3ff",color:"#4c1d95",dot:"#7c3aed"},
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -703,12 +789,22 @@ function doLogin(){
   if(String(spoc.PIN||"").trim() !== String(pin).trim()){ err.textContent="Incorrect PIN. Please try again."; return; }
   currentUser = spoc;
   document.getElementById("userChipName").textContent = spoc.Name;
+  document.getElementById("userRoleChip").textContent = spoc.Role||spoc.Permission||"";
   document.getElementById("loginWrap").style.display="none";
   document.getElementById("appWrap").style.display="flex";
-  // Hide admin tab for read-only users
-  if(spoc.Permission==="Read"){
-    document.querySelector(".nav-btn").style.display="none";
+  // Add admin panel button to header if admin
+  const headerRight = document.querySelector(".header-right");
+  let adminBtn = document.getElementById("adminPanelBtn");
+  if(!adminBtn){
+    adminBtn = document.createElement("button");
+    adminBtn.id="adminPanelBtn";
+    adminBtn.className="sync-btn";
+    adminBtn.style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3)";
+    adminBtn.innerHTML="⚙️ Admin";
+    adminBtn.onclick=openAdminModal;
+    headerRight.insertBefore(adminBtn, headerRight.querySelector(".sync-btn"));
   }
+  applyTabVisibility();
   loadData();
   scheduleNotifications();
 }
@@ -741,10 +837,11 @@ function getQuarter(dateStr){
 function renderAll(){
   updateNotifBadge();
   populateSelects();
-  if(activeView==="admin")     renderAdmin();
-  else if(activeView==="dashboard") renderDashboard();
+  if(activeView==="dashboard")  renderDashboard();
   else if(activeView==="positions") renderPositions();
+  else if(activeView==="screening") renderScreening();
   else if(activeView==="pipeline")  renderPipeline();
+  else if(activeView==="hr")        renderHR();
   else if(activeView==="employees") renderEmployees();
   if(selectedPosId) renderDetailPanel(selectedPosId);
 }
@@ -759,17 +856,17 @@ function switchView(view,btn){
 
 function populateSelects(){
   // Domain selects
-  ["pDomain"].forEach(id=>{
+  ["pDomain","epDomain"].forEach(id=>{
     const el=document.getElementById(id); if(!el)return;
     const cur=el.value; el.innerHTML="";
     domains.forEach(d=>{const o=document.createElement("option");o.value=d.Name;o.textContent=d.Name;el.appendChild(o);});
     if(cur)el.value=cur;
   });
   // SPOC selects
-  ["pSpoc","cIntSpoc","eSpoc","importSpocSel"].forEach(id=>{
+  ["pSpoc","epSpoc","cIntSpoc","eSpoc","importSpocSel"].forEach(id=>{
     const el=document.getElementById(id); if(!el)return;
     const cur=el.value;
-    el.innerHTML=id==="pSpoc"?'<option value="">— None —</option>':'';
+    el.innerHTML=(id==="pSpoc"||id==="epSpoc")?'<option value="">— None —</option>':'';
     spocs.forEach(s=>{const o=document.createElement("option");o.value=s.Name;o.textContent=s.Name;el.appendChild(o);});
     if(cur)el.value=cur;
   });
@@ -913,7 +1010,11 @@ function renderPositions(){
     if(searchQ){const q=searchQ.toLowerCase();return p.skillSet.toLowerCase().includes(q)||p.manager.toLowerCase().includes(q)||p.id.toLowerCase().includes(q)||(p.spoc||"").toLowerCase().includes(q);}
     return true;
   });
-  const writeActions = canWrite() ? `<button class="btn btn-primary" onclick="openPosModal()">+ Add Position</button><button class="btn btn-ghost" onclick="openImportModal()" style="border-color:#10b981;color:#065f46;background:#d1fae5">📥 Import Excel</button>` : "";
+  const writeActions = canWrite() ? `
+    <button class="btn btn-primary" onclick="openPosModal()">+ Add Position</button>
+    <button class="btn btn-ghost" onclick="openImportModal()" style="border-color:#10b981;color:#065f46;background:#d1fae5">📥 Import Excel</button>
+    <button class="btn btn-ghost" onclick="downloadTemplate()" style="border-color:#8b5cf6;color:#5b21b6;background:#ede9fe">📄 Template</button>
+  ` : "";
   document.getElementById("mainContent").innerHTML=`
     <div class="filters-row">
       <input class="search-input" id="posSearch" placeholder="🔍  Search by ID, skill, manager, SPOC…" value="${searchQ}" oninput="searchQ=this.value;renderPositions()"/>
@@ -945,7 +1046,10 @@ function renderPositions(){
             <td style="text-align:center;font-weight:700">${cc.length}</td>
             <td>${hs?stageBadgeHTML(hs):"<span style='color:#9ca3af;font-size:11px'>No profiles</span>"}</td>
             <td><span class="tag ${status==="Filled"?"tag-closed":"tag-open"}">${status}</span></td>
-            <td><button class="btn btn-ghost btn-sm" onclick="openPos('${pos.id}')">Manage →</button></td>
+            <td style="display:flex;gap:4px">
+            ${canWrite()?`<button class="btn btn-ghost btn-sm" onclick="openEditPosModal('${pos.id}')">✏️</button>`:""}
+            <button class="btn btn-ghost btn-sm" onclick="openPos('${pos.id}')">Manage →</button>
+          </td>
           </tr>`;
         }).join("")}</tbody>
       </table></div>
@@ -1428,6 +1532,322 @@ function toggleNotif(){ const p=document.getElementById("notifPanel"); p.style.d
 function closeNotif(){ document.getElementById("notifPanel").style.display="none"; }
 function showLoad(msg){ document.getElementById("loadingOverlay").style.display="flex"; document.getElementById("loadingText").textContent=msg||"Loading…"; }
 function hideLoad(){ document.getElementById("loadingOverlay").style.display="none"; }
+
+// ═══════════════════════════════════════════════════════════
+// LOGOUT
+// ═══════════════════════════════════════════════════════════
+function doLogout(){
+  if(!confirm("Are you sure you want to logout?")) return;
+  currentUser = null;
+  positions=[]; candidates=[]; employees=[]; spocs=[]; domains=[]; interviews=[];
+  document.getElementById("appWrap").style.display="none";
+  document.getElementById("loginWrap").style.display="flex";
+  document.getElementById("loginPin").value="";
+  document.getElementById("loginErr").textContent="";
+  const loginStatus = document.getElementById("loginStatus");
+  if(loginStatus) loginStatus.textContent="";
+  spocs=[{ID:"SPOC-001",Name:"Admin",Email:"",Phone:"",Permission:"ReadWrite",PIN:"1234",Active:"Yes",Role:"Admin"}];
+  domains=[{ID:"DOM-001",Name:"Digital",Active:"Yes"},{ID:"DOM-002",Name:"Embedded",Active:"Yes"}];
+  populateLoginSpocs();
+  fetchSpocsBackground();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ROLE-BASED TAB VISIBILITY
+// ═══════════════════════════════════════════════════════════
+let roles = [
+  {ID:"ROLE-001", Name:"Admin",     Tabs:"dashboard,positions,screening,pipeline,hr"},
+  {ID:"ROLE-002", Name:"SPOC",      Tabs:"dashboard,positions,screening,pipeline"},
+  {ID:"ROLE-003", Name:"Recruiter", Tabs:"dashboard,positions,screening,pipeline"},
+  {ID:"ROLE-004", Name:"HR",        Tabs:"dashboard,hr"},
+  {ID:"ROLE-005", Name:"Screener",  Tabs:"dashboard,hr"},
+];
+
+function applyTabVisibility(){
+  const role = currentUser?.Role || currentUser?.Permission || "Read Only";
+  const roleObj = roles.find(r=>r.Name===role);
+  const allowedTabs = roleObj ? roleObj.Tabs.split(",") : ["dashboard"];
+  const tabMap = {
+    "dashboard": ".tab-dashboard",
+    "positions": ".tab-positions",
+    "screening": ".tab-screening",
+    "pipeline":  ".tab-pipeline",
+    "hr":        ".tab-hr",
+  };
+  Object.entries(tabMap).forEach(([key, selector])=>{
+    const btn = document.querySelector(selector);
+    if(btn) btn.style.display = allowedTabs.includes(key) ? "" : "none";
+  });
+  const adminBtn = document.getElementById("adminPanelBtn");
+  if(adminBtn) adminBtn.style.display = (role==="Admin") ? "" : "none";
+  const firstAllowed = allowedTabs[0] || "dashboard";
+  const firstBtn = document.querySelector(".tab-"+firstAllowed);
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  if(firstBtn){ firstBtn.classList.add("active"); activeView=firstAllowed; }
+  renderAll();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN PANEL
+// ═══════════════════════════════════════════════════════════
+let adminActiveTab = "users";
+let editingUserId = null;
+
+function openAdminModal(){
+  adminActiveTab="users";
+  document.getElementById("adminModal").style.display="flex";
+  document.querySelectorAll(".admin-sub-btn").forEach((b,i)=>b.classList.toggle("active",i===0));
+  renderAdminTab("users");
+}
+function closeAdminModal(){ document.getElementById("adminModal").style.display="none"; }
+
+function switchAdminTab(tab,btn){
+  adminActiveTab=tab;
+  document.querySelectorAll(".admin-sub-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  renderAdminTab(tab);
+}
+
+function renderAdminTab(tab){
+  const el=document.getElementById("adminTabContent");
+  if(!el) return;
+  if(tab==="users") el.innerHTML=renderUsersTab();
+  else if(tab==="roles") el.innerHTML=renderRolesTab();
+  else if(tab==="domains") el.innerHTML=renderDomainsAdminTab();
+  else if(tab==="teams") el.innerHTML=renderTeamsTab();
+}
+
+function renderUsersTab(){
+  const rows=spocs.map(s=>`<tr>
+    <td style="font-weight:600">${s.Name}</td>
+    <td style="font-size:12px">${s.Email||"—"}</td>
+    <td style="font-size:12px">${s.Phone||"—"}</td>
+    <td><span class="permission-badge ${s.Role==="Admin"?"perm-rw":"perm-r"}">${s.Role||s.Permission||"—"}</span></td>
+    <td style="display:flex;gap:4px">
+      <button class="btn btn-ghost btn-sm" onclick="openEditUserModal('${s.ID||s.Name}')">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteUser('${s.ID||s.Name}')">✕</button>
+    </td></tr>`).join("");
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:12px;color:var(--muted)">${spocs.length} users</div>
+    <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ Add User</button></div>
+    <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border)"><table>
+    <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Actions</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:20px">No users</td></tr>'}</tbody>
+    </table></div>`;
+}
+
+function renderRolesTab(){
+  const rows=roles.map(r=>`<tr>
+    <td style="font-weight:600">${r.Name}</td>
+    <td>${(r.Tabs||"").split(",").map(t=>`<span style="background:#e8f0ff;color:#2a52be;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600;margin-right:3px">${t}</span>`).join("")}</td>
+    <td>${r.Name!=="Admin"?`<button class="btn btn-danger btn-sm" onclick="deleteRole('${r.ID}')">Remove</button>`:""}</td>
+  </tr>`).join("");
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:12px;color:var(--muted)">${roles.length} roles</div>
+    <button class="btn btn-primary btn-sm" onclick="openRoleModal()">+ Add Role</button></div>
+    <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--border)"><table>
+    <thead><tr><th>Role</th><th>Tab Access</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+function renderDomainsAdminTab(){
+  const rows=domains.map(d=>`<div class="spoc-row"><div class="spoc-name">${d.Name}</div>
+    <button class="btn btn-danger btn-sm" onclick="deleteDomainAdmin('${d.ID||d.Name}')">Remove</button></div>`).join("");
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-size:12px;color:var(--muted)">${domains.length} domains</div></div>
+    <div style="background:white;border-radius:8px;border:1px solid var(--border);padding:0 14px;margin-bottom:14px">${rows||"<div style='padding:14px;color:#9ca3af;font-size:12px'>No domains</div>"}</div>
+    <div style="display:flex;gap:8px">
+      <input class="form-input" id="newDomainName" placeholder="New domain name e.g. Cloud, Testing"/>
+      <button class="btn btn-success" onclick="addDomainInline()">+ Add</button>
+    </div>`;
+}
+
+function renderTeamsTab(){
+  return `<div style="font-size:12px;color:var(--muted);margin-bottom:12px">Teams used in Employee records</div>
+    <div style="background:white;border-radius:8px;border:1px solid var(--border);padding:0 14px">
+      ${["Onsite","Offsite"].map(t=>`<div class="spoc-row"><div class="spoc-name">${t}</div><span style="font-size:11px;color:#9ca3af">Built-in</span></div>`).join("")}
+    </div>`;
+}
+
+function addDomainInline(){
+  const name=(document.getElementById("newDomainName")||{}).value?.trim();
+  if(!name){showToast("Enter domain name","error");return;}
+  const data={id:"DOM-"+Date.now(),name,active:"Yes"};
+  api("POST",{action:"saveDomain",data}).then(()=>{
+    domains.push({ID:data.id,Name:name,Active:"Yes"});
+    showToast("✅ Domain added","success");
+    renderAdminTab("domains"); populateSelects();
+  }).catch(()=>showToast("❌ Failed","error"));
+}
+
+function deleteDomainAdmin(id){
+  if(!confirm("Remove this domain?"))return;
+  api("POST",{action:"deleteDomain",id}).then(()=>{
+    domains=domains.filter(d=>d.ID!==id&&d.Name!==id);
+    renderAdminTab("domains"); populateSelects();
+    showToast("Domain removed","info");
+  }).catch(()=>showToast("❌ Failed","error"));
+}
+
+// ── USER MODAL ──
+function openUserModal(){
+  editingUserId=null;
+  document.getElementById("userModalTitle").textContent="Add User";
+  ["uName","uEmail","uPhone","uPin"].forEach(id=>{ const el=document.getElementById(id); if(el)el.value=""; });
+  const sel=document.getElementById("uRole");
+  if(sel){ sel.innerHTML=""; roles.forEach(r=>{const o=document.createElement("option");o.value=r.Name;o.textContent=r.Name;sel.appendChild(o);}); }
+  document.getElementById("userModal").style.display="flex";
+}
+
+function openEditUserModal(id){
+  const s=spocs.find(sp=>sp.ID===id||sp.Name===id); if(!s)return;
+  editingUserId=id;
+  document.getElementById("userModalTitle").textContent="Edit User";
+  document.getElementById("uName").value=s.Name;
+  document.getElementById("uEmail").value=s.Email||"";
+  document.getElementById("uPhone").value=s.Phone||"";
+  document.getElementById("uPin").value="";
+  const sel=document.getElementById("uRole");
+  if(sel){ sel.innerHTML=""; roles.forEach(r=>{const o=document.createElement("option");o.value=r.Name;o.textContent=r.Name;sel.appendChild(o);}); sel.value=s.Role||""; }
+  document.getElementById("userModal").style.display="flex";
+}
+
+function closeUserModal(){ document.getElementById("userModal").style.display="none"; editingUserId=null; }
+
+async function saveUser(){
+  const name=document.getElementById("uName").value.trim();
+  const pin=document.getElementById("uPin").value.trim();
+  const role=document.getElementById("uRole").value;
+  if(!name){showToast("Name is required","error");return;}
+  if(!pin&&!editingUserId){showToast("PIN is required","error");return;}
+  const btn=document.getElementById("saveUserBtn"); btn.disabled=true; btn.textContent="Saving…";
+  const data={id:editingUserId||("SPOC-"+Date.now()),name,
+    email:document.getElementById("uEmail").value.trim(),
+    phone:document.getElementById("uPhone").value.trim(),
+    permission:role==="Admin"?"ReadWrite":"Read",
+    pin:pin||(spocs.find(s=>s.ID===editingUserId)?.PIN)||"0000",
+    active:"Yes",role};
+  try{
+    if(editingUserId){
+      await api("POST",{action:"updateSpoc",data:{...data,ID:editingUserId}});
+      spocs=spocs.map(s=>(s.ID===editingUserId||s.Name===editingUserId)?{...s,Name:name,Email:data.email,Phone:data.phone,Permission:data.permission,PIN:data.pin,Role:role,Active:"Yes"}:s);
+    } else {
+      await api("POST",{action:"saveSpoc",data});
+      spocs.push({ID:data.id,Name:name,Email:data.email,Phone:data.phone,Permission:data.permission,PIN:data.pin,Role:role,Active:"Yes"});
+    }
+    closeUserModal(); renderAdminTab("users"); populateLoginSpocs();
+    showToast("✅ User saved","success");
+  }catch(e){showToast("❌ Failed: "+e.message,"error");}
+  finally{btn.disabled=false;btn.textContent="Save User";}
+}
+
+async function deleteUser(id){
+  if(!confirm("Delete this user?"))return;
+  try{
+    await api("POST",{action:"deleteSpoc",id});
+    spocs=spocs.filter(s=>s.ID!==id&&s.Name!==id);
+    renderAdminTab("users"); populateLoginSpocs();
+    showToast("User deleted","info");
+  }catch(e){showToast("❌ Failed","error");}
+}
+
+// ── ROLE MODAL ──
+function openRoleModal(){
+  document.getElementById("rName").value="";
+  const tabs=["dashboard","positions","screening","pipeline","hr"];
+  document.getElementById("roleTabChecks").innerHTML=tabs.map(t=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:#f0f4ff;padding:5px 10px;border-radius:6px"><input type="checkbox" value="${t}"/> ${t.charAt(0).toUpperCase()+t.slice(1)}</label>`).join("");
+  document.getElementById("roleModal").style.display="flex";
+}
+function closeRoleModal(){ document.getElementById("roleModal").style.display="none"; }
+
+function saveRole(){
+  const name=document.getElementById("rName").value.trim();
+  if(!name){showToast("Role name required","error");return;}
+  const checks=[...document.querySelectorAll("#roleTabChecks input:checked")].map(c=>c.value);
+  roles.push({ID:"ROLE-"+Date.now(),Name:name,Tabs:checks.join(",")});
+  closeRoleModal(); renderAdminTab("roles");
+  showToast("✅ Role added","success");
+}
+
+function deleteRole(id){
+  if(!confirm("Delete this role?"))return;
+  roles=roles.filter(r=>r.ID!==id);
+  renderAdminTab("roles");
+  showToast("Role deleted","info");
+}
+
+// ═══════════════════════════════════════════════════════════
+// EDIT POSITION
+// ═══════════════════════════════════════════════════════════
+let editingPosId=null;
+
+function openEditPosModal(posId){
+  const pos=positions.find(p=>p.id===posId); if(!pos)return;
+  editingPosId=posId;
+  populateSelects();
+  document.getElementById("epId").value=pos.id;
+  document.getElementById("epSkill").value=pos.skillSet;
+  document.getElementById("epManager").value=pos.manager;
+  document.getElementById("epLoc").value=pos.location;
+  document.getElementById("epDate").value=pos.openedDate;
+  document.getElementById("epJD").value=pos.jd||"";
+  setTimeout(()=>{
+    document.getElementById("epDomain").value=pos.domain;
+    document.getElementById("epSpoc").value=pos.spoc||"";
+  },80);
+  document.getElementById("editPosModal").style.display="flex";
+}
+function closeEditPosModal(){ document.getElementById("editPosModal").style.display="none"; editingPosId=null; }
+
+async function saveEditPosition(){
+  if(!canWrite())return;
+  const skill=document.getElementById("epSkill").value.trim();
+  const mgr=document.getElementById("epManager").value.trim();
+  if(!skill||!mgr){showToast("Skill Set and Manager required","error");return;}
+  const btn=document.getElementById("saveEditPosBtn"); btn.disabled=true; btn.textContent="Updating…";
+  const data={id:editingPosId,manager:mgr,spoc:document.getElementById("epSpoc").value,skillSet:skill,
+    location:document.getElementById("epLoc").value.trim(),domain:document.getElementById("epDomain").value,
+    openedDate:document.getElementById("epDate").value,jd:document.getElementById("epJD").value.trim(),
+    status:"Open",user:currentUser?.Name};
+  try{
+    await api("POST",{action:"updatePosition",data});
+    positions=positions.map(p=>p.id===editingPosId?{...p,...data}:p);
+    renderAll(); closeEditPosModal();
+    showToast("✅ Position updated","success");
+  }catch(e){showToast("❌ Update failed","error");}
+  finally{btn.disabled=false;btn.textContent="Update Position";}
+}
+
+// ═══════════════════════════════════════════════════════════
+// TEMPLATE DOWNLOAD
+// ═══════════════════════════════════════════════════════════
+function downloadTemplate(){
+  const headers=[["Beeline ID","Skill Set","Hiring Manager","SPOC","Location","Domain","Date Opened","Job Description"]];
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(headers);
+  ws["!cols"]=[{wch:14},{wch:22},{wch:22},{wch:16},{wch:14},{wch:12},{wch:14},{wch:40}];
+  XLSX.utils.book_append_sheet(wb,ws,"Positions");
+  XLSX.writeFile(wb,"GGS_Positions_Template.xlsx");
+  showToast("✅ Template downloaded!","success");
+}
+
+// ═══════════════════════════════════════════════════════════
+// SCREENING TAB
+// ═══════════════════════════════════════════════════════════
+function renderScreening(){
+  document.getElementById("mainContent").innerHTML=`
+    <div style="text-align:center;padding:60px 20px;background:white;border-radius:14px;border:1px solid var(--border)">
+      <div style="font-size:48px;margin-bottom:14px">🔍</div>
+      <div style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px">Screening Module</div>
+      <div style="font-size:13px;color:var(--muted)">Coming soon — requirements will be added in the next phase.</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// HR TAB
+// ═══════════════════════════════════════════════════════════
+function renderHR(){ renderEmployees(); }
+
 function showToast(msg,type="info"){ const w=document.getElementById("toastWrap"); const el=document.createElement("div"); el.className=`toast ${type}`; el.textContent=msg; w.appendChild(el); setTimeout(()=>el.remove(),3500); }
 </script>
 </body>
