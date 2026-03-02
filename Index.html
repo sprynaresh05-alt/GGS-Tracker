@@ -536,7 +536,11 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
     <div class="form-group"><label class="form-label">Role Name *</label><input class="form-input" id="rName" placeholder="e.g. Recruiter, HR, Screener"/></div>
     <div class="form-group"><label class="form-label">Tab Access</label>
       <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px" id="roleTabChecks">
-        ${["Dashboard","Positions","Screening","Pipeline","HR"].map(t=>`<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" value="${t.toLowerCase()}" style="cursor:pointer"/> ${t}</label>`).join("")}
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:#f0f4ff;padding:5px 10px;border-radius:6px"><input type="checkbox" value="dashboard"/> Dashboard</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:#f0f4ff;padding:5px 10px;border-radius:6px"><input type="checkbox" value="positions"/> Positions</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:#f0f4ff;padding:5px 10px;border-radius:6px"><input type="checkbox" value="screening"/> Screening</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:#f0f4ff;padding:5px 10px;border-radius:6px"><input type="checkbox" value="pipeline"/> Pipeline</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;background:#f0f4ff;padding:5px 10px;border-radius:6px"><input type="checkbox" value="hr"/> HR</label>
       </div>
     </div>
     <div class="modal-actions">
