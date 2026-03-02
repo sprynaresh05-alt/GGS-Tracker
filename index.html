@@ -722,6 +722,11 @@ async function fetchSpocsBackground(){
     const data = JSON.parse(text);
     if(data && data.spocs && data.spocs.length>0){
       applyData(data);
+      // Normalize roles for all loaded spocs
+      spocs = spocs.map(s=>{
+        if(!s.Role||s.Role==="") s.Role = (s.Permission==="ReadWrite")?"Admin":"SPOC";
+        return s;
+      });
       populateLoginSpocs();
       const s = document.getElementById("loginStatus");
       if(s) s.textContent = "✅ " + spocs.length + " users loaded";
@@ -791,9 +796,13 @@ function doLogin(){
   const spoc = spocs.find(s=>(s.ID===spocId||s.Name===spocId));
   if(!spoc){ err.textContent="User not found"; return; }
   if(String(spoc.PIN||"").trim() !== String(pin).trim()){ err.textContent="Incorrect PIN. Please try again."; return; }
+  // Normalize role — handle old Permission field and new Role field
+  if(!spoc.Role || spoc.Role==="") {
+    spoc.Role = (spoc.Permission==="ReadWrite") ? "Admin" : "SPOC";
+  }
   currentUser = spoc;
   document.getElementById("userChipName").textContent = spoc.Name;
-  document.getElementById("userRoleChip").textContent = spoc.Role||spoc.Permission||"";
+  document.getElementById("userRoleChip").textContent = spoc.Role||"";
   document.getElementById("loginWrap").style.display="none";
   document.getElementById("appWrap").style.display="flex";
   // Add admin panel button to header if admin
@@ -841,12 +850,13 @@ function getQuarter(dateStr){
 function renderAll(){
   updateNotifBadge();
   populateSelects();
-  if(activeView==="dashboard")  renderDashboard();
-  else if(activeView==="positions") renderPositions();
-  else if(activeView==="screening") renderScreening();
-  else if(activeView==="pipeline")  renderPipeline();
-  else if(activeView==="hr")        renderHR();
-  else if(activeView==="employees") renderEmployees();
+  if(activeView==="dashboard")      renderDashboard();
+  else if(activeView==="positions")  renderPositions();
+  else if(activeView==="screening")  renderScreening();
+  else if(activeView==="pipeline")   renderPipeline();
+  else if(activeView==="hr")         renderHR();
+  else if(activeView==="employees")  renderEmployees();
+  else renderDashboard();
   if(selectedPosId) renderDetailPanel(selectedPosId);
 }
 
@@ -855,7 +865,14 @@ function switchView(view,btn){
   document.getElementById("detailOverlay").style.display="none";
   document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
-  renderAll();
+  // Render directly without touching tab visibility
+  if(view==="dashboard")      renderDashboard();
+  else if(view==="positions")  renderPositions();
+  else if(view==="screening")  renderScreening();
+  else if(view==="pipeline")   renderPipeline();
+  else if(view==="hr")         renderHR();
+  else if(view==="employees")  renderEmployees();
+  else renderDashboard();
 }
 
 function populateSelects(){
@@ -1568,9 +1585,12 @@ let roles = [
 ];
 
 function applyTabVisibility(){
-  const role = currentUser?.Role || currentUser?.Permission || "Read Only";
+  // Get role - check Role field first, then Permission, then default to Admin if it's the admin user
+  let role = currentUser?.Role || "";
+  if(!role || role==="ReadWrite") role = "Admin";
+  if(role==="Read") role = "SPOC";
   const roleObj = roles.find(r=>r.Name===role);
-  const allowedTabs = roleObj ? roleObj.Tabs.split(",") : ["dashboard"];
+  const allowedTabs = roleObj ? roleObj.Tabs.split(",") : ["dashboard","positions","screening","pipeline","hr"];
   const tabMap = {
     "dashboard": ".tab-dashboard",
     "positions": ".tab-positions",
@@ -1588,7 +1608,12 @@ function applyTabVisibility(){
   const firstBtn = document.querySelector(".tab-"+firstAllowed);
   document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
   if(firstBtn){ firstBtn.classList.add("active"); activeView=firstAllowed; }
-  renderAll();
+  // Render the first allowed view directly
+  if(firstAllowed==="dashboard") renderDashboard();
+  else if(firstAllowed==="positions") renderPositions();
+  else if(firstAllowed==="screening") renderScreening();
+  else if(firstAllowed==="pipeline") renderPipeline();
+  else if(firstAllowed==="hr") renderHR();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1856,4 +1881,3 @@ function showToast(msg,type="info"){ const w=document.getElementById("toastWrap"
 </script>
 </body>
 </html>
-
