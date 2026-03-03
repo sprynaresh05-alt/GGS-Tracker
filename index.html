@@ -381,76 +381,212 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
 
 <!-- ADD EMPLOYEE MODAL -->
 <div class="modal-overlay" id="empModal" style="display:none" onclick="closeEmpModal()">
-  <div class="modal modal-lg" onclick="event.stopPropagation()">
-    <div class="modal-title" id="empModalTitle">Add Employee</div>
-    <div class="form-row">
-      <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="eName" placeholder="Full Name"/></div>
-      <div class="form-group"><label class="form-label">GGS Emp ID</label><input class="form-input" id="eGGSId" placeholder="e.g. GGS-001"/></div>
+  <div class="modal modal-lg" style="max-width:780px;max-height:92vh;overflow-y:auto" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div class="modal-title" id="empModalTitle" style="margin:0">Add Employee</div>
+      <button class="close-btn" style="background:var(--border);color:var(--text);width:32px;height:32px" onclick="closeEmpModal()">×</button>
     </div>
-    <div class="form-row">
-      <div class="form-group"><label class="form-label">Phone No</label><input class="form-input" id="ePhone" placeholder="Mobile number"/></div>
-      <div class="form-group"><label class="form-label">Personal Email</label><input class="form-input" id="ePersonalEmail" placeholder="personal@email.com"/></div>
+    <!-- Section Tabs -->
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:2px solid var(--border);padding-bottom:0">
+      <button class="admin-sub-btn active" onclick="switchEmpSection('employment',this)">🏢 Employment</button>
+      <button class="admin-sub-btn" onclick="switchEmpSection('personal',this)">👤 Personal</button>
+      <button class="admin-sub-btn" onclick="switchEmpSection('contact',this)">📬 Contact</button>
+      <button class="admin-sub-btn" onclick="switchEmpSection('emergency',this)">🆘 Emergency</button>
+      <button class="admin-sub-btn" onclick="switchEmpSection('bank',this)">🏦 Bank</button>
+      <button class="admin-sub-btn" onclick="switchEmpSection('documents',this)">📄 Documents</button>
     </div>
-    <div class="form-row">
-      <div class="form-group"><label class="form-label">GGS Email</label><input class="form-input" id="eGGSEmail" placeholder="name@ggs.com"/></div>
-      <div class="form-group"><label class="form-label">DOJ in GGS</label><input type="date" class="form-input" id="eDOJ"/></div>
-    </div>
-    <div class="form-row">
-      <div class="form-group"><label class="form-label">Skill Set</label><input class="form-input" id="eSkill" placeholder="e.g. Java Developer"/></div>
-      <div class="form-group"><label class="form-label">SPOC</label><select class="form-input" id="eSpoc"></select></div>
-    </div>
-    <div class="form-group"><label class="form-label">Team *</label>
-      <select class="form-input" id="eTeam" onchange="toggleEmpTeamFields()">
-        <option value="">— Select Team —</option>
-        <option value="Onsite">Onsite</option>
-        <option value="Offsite">Offsite</option>
-      </select>
-    </div>
-    <!-- Onsite fields -->
-    <div id="onsiteFields" style="display:none" class="conditional-section">
-      <div class="conditional-title">🏢 Onsite Details</div>
+    <!-- Employment Section -->
+    <div id="empSec-employment">
       <div class="form-row">
-        <div class="form-group"><label class="form-label">HM Name</label><input class="form-input" id="eHMName" placeholder="Hiring Manager Name"/></div>
-        <div class="form-group"><label class="form-label">CAT Email</label><input class="form-input" id="eCATEmail" placeholder="candidate@cat.com"/></div>
+        <div class="form-group"><label class="form-label">Emp Code *</label><input class="form-input" id="eEmpCode" placeholder="e.g. GGS001"/></div>
+        <div class="form-group"><label class="form-label">Name *</label><input class="form-input" id="eName" placeholder="Full Name"/></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">HM Phone</label><input class="form-input" id="eHMPhone" placeholder="HM Phone No"/></div>
-        <div class="form-group"><label class="form-label">HM Email</label><input class="form-input" id="eHMEmail" placeholder="hm@client.com"/></div>
+        <div class="form-group"><label class="form-label">Designation</label><input class="form-input" id="eDesignation" placeholder="e.g. Software Engineer"/></div>
+        <div class="form-group"><label class="form-label">Domain</label><select class="form-input" id="eDomainEmp"></select></div>
       </div>
       <div class="form-row">
-        <div class="form-group"><label class="form-label">Bill Rate</label><input class="form-input" id="eBillRate" placeholder="e.g. $50/hr"/></div>
-        <div class="form-group"><label class="form-label">DOJ in CAT</label><input type="date" class="form-input" id="eDOJCAT" oninput="calcYearsInCAT()"/></div>
+        <div class="form-group"><label class="form-label">GGS IS DOJ</label><input type="date" class="form-input" id="eGGSDOJ"/></div>
+        <div class="form-group"><label class="form-label">DOJ (IS + ES)</label><input type="date" class="form-input" id="eDOJISES"/></div>
       </div>
-      <div class="form-group"><label class="form-label">Years of Exp in CAT (Auto-calculated)</label>
-        <input class="form-input" id="eYearsCAT" readonly style="background:#f0f4ff;color:var(--blue);font-weight:600"/>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Experience (Months)</label><input class="form-input" id="eExpMonths" placeholder="e.g. 24"/></div>
+        <div class="form-group"><label class="form-label">Total Years in GGS</label><input class="form-input" id="eTotalYrsGGS" placeholder="e.g. 2.5"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Base Location</label><input class="form-input" id="eBaseLoc" placeholder="e.g. Chennai"/></div>
+        <div class="form-group"><label class="form-label">Current Location</label><input class="form-input" id="eCurrentLoc" placeholder="e.g. Bangalore"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Assignment</label><input class="form-input" id="eAssignment" placeholder="Project / Assignment"/></div>
+        <div class="form-group"><label class="form-label">For (Company)</label>
+          <select class="form-input" id="eFor">
+            <option value="GGS">GGS</option>
+            <option value="Sister Concern">Sister Concern</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Account</label><input class="form-input" id="eAccount" placeholder="Account / Client"/></div>
+        <div class="form-group"><label class="form-label">HR POC</label><input class="form-input" id="eHRPOC" placeholder="HR Point of Contact"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Supervisor – Onsite</label><input class="form-input" id="eSupOnsite" placeholder="Onsite Supervisor"/></div>
+        <div class="form-group"><label class="form-label">Supervisor – Offsite</label><input class="form-input" id="eSupOffsite" placeholder="Offsite Supervisor"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-input" id="eStatus">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+            <option value="Resigned">Resigned</option>
+            <option value="Terminated">Terminated</option>
+            <option value="On Notice">On Notice</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">POC</label><input class="form-input" id="ePOC" placeholder="Point of Contact"/></div>
       </div>
     </div>
-    <!-- Offsite fields -->
-    <div id="offsiteFields" style="display:none" class="conditional-section">
-      <div class="conditional-title">🌐 Offsite Details</div>
-      <div class="form-group"><label class="form-label">HM Name</label><input class="form-input" id="eHMNameOffsite" placeholder="Hiring Manager Name"/></div>
+    <!-- Personal Section -->
+    <div id="empSec-personal" style="display:none">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Date of Birth</label><input type="date" class="form-input" id="eDOB" onchange="calcAge()"/></div>
+        <div class="form-group"><label class="form-label">Age (Auto)</label><input class="form-input" id="eAge" readonly style="background:#f0f4ff;color:var(--blue)"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Gender</label>
+          <select class="form-input" id="eGender">
+            <option value="">— Select —</option>
+            <option>Male</option><option>Female</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Marital Status</label>
+          <select class="form-input" id="eMarital">
+            <option value="">— Select —</option>
+            <option>Single</option><option>Married</option><option>Divorced</option><option>Widowed</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Blood Group</label>
+          <select class="form-input" id="eBlood">
+            <option value="">— Select —</option>
+            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">T-Shirt Size</label>
+          <select class="form-input" id="eTShirt">
+            <option value="">— Select —</option>
+            <option>XS</option><option>S</option><option>M</option>
+            <option>L</option><option>XL</option><option>XXL</option><option>XXXL</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Nationality</label><input class="form-input" id="eNationality" placeholder="e.g. Indian"/></div>
+        <div class="form-group"><label class="form-label">Highest Education</label><input class="form-input" id="eEducation" placeholder="e.g. B.E. Computer Science"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Father's Name</label><input class="form-input" id="eFatherName" placeholder="Father's Name"/></div>
+        <div class="form-group"><label class="form-label">Father's Occupation</label><input class="form-input" id="eFatherOcc" placeholder="Father's Occupation"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Mother's Occupation</label><input class="form-input" id="eMotherOcc" placeholder="Mother's Occupation"/></div>
+        <div class="form-group"><label class="form-label">Guardian's Name</label><input class="form-input" id="eGuardianName" placeholder="Guardian's Name"/></div>
+      </div>
+      <div class="form-group"><label class="form-label">Guardian's Occupation</label><input class="form-input" id="eGuardianOcc" placeholder="Guardian's Occupation"/></div>
     </div>
-    <hr class="divider"/>
-    <div class="form-group"><label class="form-label">Status</label>
-      <select class="form-input" id="eStatus" onchange="toggleResignFields()">
-        <option value="Active">Active</option>
-        <option value="Resigned">Resigned</option>
-        <option value="Terminated">Terminated</option>
-        <option value="Relieved">Relieved</option>
-      </select>
+    <!-- Contact Section -->
+    <div id="empSec-contact" style="display:none">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Contact Number</label><input class="form-input" id="eContact" placeholder="Mobile Number"/></div>
+        <div class="form-group"><label class="form-label">Personal Email ID</label><input class="form-input" id="ePersonalEmail" placeholder="personal@email.com"/></div>
+      </div>
+      <div class="form-group"><label class="form-label">GGS Email ID</label><input class="form-input" id="eGGSEmail" placeholder="name@ggs.com"/></div>
+      <div class="form-group"><label class="form-label">Present Address</label>
+        <textarea class="form-input" id="ePresentAddr" rows="3" placeholder="Present Address" style="resize:vertical"></textarea>
+      </div>
+      <div class="form-group"><label class="form-label">Permanent Address</label>
+        <textarea class="form-input" id="ePermanentAddr" rows="3" placeholder="Permanent Address" style="resize:vertical"></textarea>
+      </div>
     </div>
-    <div id="resignFields" style="display:none" class="form-row">
-      <div class="form-group"><label class="form-label">Date of Resignation</label><input type="date" class="form-input" id="eResignDate"/></div>
-      <div class="form-group"><label class="form-label">Date of Relieving</label><input type="date" class="form-input" id="eRelievingDate"/></div>
+    <!-- Emergency Contact Section -->
+    <div id="empSec-emergency" style="display:none">
+      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;padding:8px 12px;background:#fff7ed;border-radius:8px;border-left:3px solid #f97316">🆘 Emergency Contact 1</div>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="eEC1Name" placeholder="Contact Name"/></div>
+        <div class="form-group"><label class="form-label">Relationship</label><input class="form-input" id="eEC1Rel" placeholder="e.g. Father, Spouse"/></div>
+        <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="eEC1Phone" placeholder="Contact Number"/></div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--navy);margin:16px 0 12px;padding:8px 12px;background:#fff7ed;border-radius:8px;border-left:3px solid #f97316">🆘 Emergency Contact 2</div>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="eEC2Name" placeholder="Contact Name"/></div>
+        <div class="form-group"><label class="form-label">Relationship</label><input class="form-input" id="eEC2Rel" placeholder="e.g. Mother, Sibling"/></div>
+        <div class="form-group"><label class="form-label">Phone Number</label><input class="form-input" id="eEC2Phone" placeholder="Contact Number"/></div>
+      </div>
     </div>
-    <div class="modal-actions">
+    <!-- Bank Section -->
+    <div id="empSec-bank" style="display:none">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Bank Account Number</label><input class="form-input" id="eBankAcc" placeholder="Account Number"/></div>
+        <div class="form-group"><label class="form-label">Beneficiary Name</label><input class="form-input" id="eBeneficiary" placeholder="As per bank records"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Bank Name / Branch</label><input class="form-input" id="eBankName" placeholder="e.g. SBI – Anna Nagar"/></div>
+        <div class="form-group"><label class="form-label">IFSC Code</label><input class="form-input" id="eIFSC" placeholder="e.g. SBIN0001234"/></div>
+      </div>
+    </div>
+    <!-- Documents Section -->
+    <div id="empSec-documents" style="display:none">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">PAN Number</label><input class="form-input" id="ePAN" placeholder="e.g. ABCDE1234F"/></div>
+        <div class="form-group"><label class="form-label">Aadhaar Number</label><input class="form-input" id="eAadhaar" placeholder="12-digit Aadhaar"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">UAN</label><input class="form-input" id="eUAN" placeholder="Universal Account Number"/></div>
+        <div class="form-group"><label class="form-label">Insurance Type</label><input class="form-input" id="eInsurance" placeholder="e.g. Mediclaim, Term"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Bond</label>
+          <select class="form-input" id="eBond">
+            <option value="NA">NA</option>
+            <option value="6 Months">6 Months</option>
+            <option value="12 Months">12 Months</option>
+            <option value="18 Months">18 Months</option>
+            <option value="24 Months">24 Months</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Bond Document</label><input class="form-input" id="eBondDoc" placeholder="Document reference"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">BGV Status</label>
+          <select class="form-input" id="eBGV">
+            <option value="">— Select —</option>
+            <option>Pending</option><option>In Progress</option>
+            <option>Completed</option><option>Failed</option><option>Not Required</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Personal File (Hard Copy)</label>
+          <select class="form-input" id="ePersonalFile">
+            <option value="">— Select —</option>
+            <option>Received</option><option>Pending</option><option>Not Applicable</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Remarks</label>
+        <textarea class="form-input" id="eRemarks" rows="3" placeholder="Any remarks…" style="resize:vertical"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:18px">
       <button class="btn btn-ghost" onclick="closeEmpModal()">Cancel</button>
-      <button class="btn btn-primary" id="saveEmpBtn" onclick="saveEmployee()">Save Employee</button>
+      <button class="btn btn-ghost" onclick="prevEmpSection()" id="empPrevBtn" style="display:none">← Previous</button>
+      <button class="btn btn-primary" onclick="nextEmpSection()" id="empNextBtn">Next →</button>
+      <button class="btn btn-success" onclick="saveEmployee()" id="empSaveBtn" style="display:none">💾 Save Employee</button>
     </div>
   </div>
 </div>
-
-<!-- ADD SPOC MODAL -->
 <div class="modal-overlay" id="spocModal" style="display:none" onclick="closeSpocModal()">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title" id="spocModalTitle">Add SPOC</div>
@@ -1265,55 +1401,51 @@ function setPipelineFilter(stage){ pipelineStageFilter=stage; renderPipeline(); 
 // EMPLOYEES
 // ═══════════════════════════════════════════════════════════
 function renderEmployees(){
-  const searchEmp = (document.getElementById("empSearch")||{value:""}).value||"";
-  const filterEmpStatus = (document.getElementById("empStatusFilter")||{value:"All"}).value||"All";
-  const filterTeam = (document.getElementById("teamFilter")||{value:"All"}).value||"All";
+  const canEdit = currentUser?.Role==="Admin" || currentUser?.Role==="HR";
+  const filtered = employees;
+  const rows = filtered.length===0
+    ? `<tr><td colspan="10" style="text-align:center;color:#9ca3af;padding:28px">No employees yet. Add or onboard a candidate to get started.</td></tr>`
+    : filtered.map(e=>`<tr>
+        <td style="font-weight:600">${e.empCode||"—"}</td>
+        <td>${e.name||"—"}</td>
+        <td style="font-size:12px">${e.designation||"—"}</td>
+        <td style="font-size:12px">${e.domain||"—"}</td>
+        <td style="font-size:12px">${e.baseLoc||"—"}</td>
+        <td style="font-size:12px">${e.currentLoc||"—"}</td>
+        <td style="font-size:12px">${formatDate(e.ggsDOJ)||"—"}</td>
+        <td style="font-size:12px">${e.expMonths||"—"} mo</td>
+        <td><span class="status-badge ${e.status==="Active"?"status-open":"status-filled"}">${e.status||"Active"}</span></td>
+        <td style="display:flex;gap:4px">
+          ${canEdit?`<button class="btn btn-ghost btn-sm" onclick="openEditEmpModal('${e.id}')">✏️</button>`:""}
+          ${canEdit?`<button class="btn btn-danger btn-sm" onclick="deleteEmployee('${e.id}')">✕</button>`:""}
+          <button class="btn btn-ghost btn-sm" onclick="viewEmpDetail('${e.id}')">View →</button>
+        </td>
+      </tr>`).join("");
 
-  const filtered = employees.filter(e=>{
-    if(filterTeam!=="All"&&e.team!==filterTeam)return false;
-    if(filterEmpStatus!=="All"&&e.status!==filterEmpStatus)return false;
-    if(searchEmp){const q=searchEmp.toLowerCase();return e.name.toLowerCase().includes(q)||(e.ggsEmpId||"").toLowerCase().includes(q)||(e.skillSet||"").toLowerCase().includes(q)||(e.spoc||"").toLowerCase().includes(q);}
-    return true;
-  });
+  const writeBtn = canEdit ? `<button class="btn btn-primary" onclick="openEmpModal()">+ Add Employee</button>` : "";
 
-  const writeBtn = canWrite()?`<button class="btn btn-primary" onclick="openEmpModal()">+ Add Employee</button>`:"";
   document.getElementById("mainContent").innerHTML=`
-    <div class="filters-row">
-      <input class="search-input" id="empSearch" placeholder="🔍  Search by name, ID, skill, SPOC…" value="${searchEmp}" oninput="renderEmployees()"/>
-      <select class="filter-select" id="teamFilter" onchange="renderEmployees()">
-        <option value="All">All Teams</option><option value="Onsite">Onsite</option><option value="Offsite">Offsite</option>
-      </select>
-      <select class="filter-select" id="empStatusFilter" onchange="renderEmployees()">
-        <option value="All">All Status</option><option value="Active">Active</option><option value="Resigned">Resigned</option><option value="Terminated">Terminated</option><option value="Relieved">Relieved</option>
-      </select>
-      ${writeBtn}
+    <div class="sticky-filters">
+      <div class="filters-row" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:20px;font-weight:700;color:var(--navy)">👥 Employee Master</div>
+          <div style="font-size:12px;color:var(--muted)">${filtered.length} employee${filtered.length!==1?"s":""}</div>
+        </div>
+        ${writeBtn}
+      </div>
     </div>
     <div class="section-card">
-      <div class="section-card-header"><div class="section-card-title">Employees (${filtered.length})</div></div>
-      ${filtered.length===0?`<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No employees found</div></div>`:`
       <div class="table-scroll"><table>
-        <thead><tr><th>Name</th><th>GGS ID</th><th>Skill Set</th><th>Team</th><th>SPOC</th><th>DOJ</th><th>HM Name</th><th>Yrs in CAT</th><th>Status</th><th></th></tr></thead>
-        <tbody>${filtered.map(e=>`<tr>
-          <td style="font-weight:700">${e.name}</td>
-          <td><code style="font-size:11px;background:#f0f4ff;padding:2px 5px;border-radius:3px">${e.ggsEmpId||"—"}</code></td>
-          <td style="font-size:12px">${e.skillSet||"—"}</td>
-          <td><span class="tag ${e.team==="Onsite"?"tag-onsite":"tag-offsite"}">${e.team||"—"}</span></td>
-          <td style="font-size:11.5px">${e.spoc||"—"}</td>
-          <td style="font-size:11.5px">${e.doj||"—"}</td>
-          <td style="font-size:11.5px">${e.hmName||"—"}</td>
-          <td style="font-size:11.5px;font-weight:600;color:var(--blue)">${e.dojInCat?calcYearsInCATVal(e.dojInCat):"—"}</td>
-          <td><span class="tag tag-${e.status?e.status.toLowerCase():"active"}">${e.status||"Active"}</span></td>
-          <td style="display:flex;gap:4px">
-            ${canWrite()?`<button class="btn btn-ghost btn-sm" onclick="openEditEmpModal('${e.id}')">Edit</button><button class="btn btn-danger btn-sm" onclick="deleteEmployee('${e.id}')">✕</button>`:""}
-          </td>
-        </tr>`).join("")}</tbody>
-      </table></div>`}
+        <thead><tr>
+          <th>Emp Code</th><th>Name</th><th>Designation</th><th>Domain</th>
+          <th>Base Location</th><th>Current Location</th><th>GGS DOJ</th>
+          <th>Experience</th><th>Status</th><th>Actions</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
     </div>`;
 }
 
-// ═══════════════════════════════════════════════════════════
-// ADMIN
-// ═══════════════════════════════════════════════════════════
 function renderAdmin(){
   if(currentUser&&currentUser.Permission==="Read"){ document.getElementById("mainContent").innerHTML=`<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-text">You have Read-Only access. Admin panel is restricted.</div></div>`; return; }
   document.getElementById("mainContent").innerHTML=`
@@ -2283,6 +2415,207 @@ async function deleteScreenedCandidate(id){
 // HR TAB
 // ═══════════════════════════════════════════════════════════
 function renderHR(){ renderEmployees(); }
+
+
+// ═══════════════════════════════════════════════════════════
+// EMPLOYEE MASTER — FORM HELPERS
+// ═══════════════════════════════════════════════════════════
+const EMP_SECTIONS = ["employment","personal","contact","emergency","bank","documents"];
+let empSectionIdx = 0;
+
+
+function calcAge(){
+  const dob = document.getElementById("eDOB").value;
+  if(!dob){ document.getElementById("eAge").value=""; return; }
+  const diff = (new Date()-new Date(dob))/(1000*60*60*24*365.25);
+  document.getElementById("eAge").value = diff>0 ? Math.floor(diff)+" yrs" : "";
+}
+
+function switchEmpSection(sec, btn){
+  EMP_SECTIONS.forEach(s=>{
+    const el=document.getElementById("empSec-"+s);
+    if(el) el.style.display = s===sec?"block":"none";
+  });
+  document.querySelectorAll(".admin-sub-btn").forEach(b=>b.classList.remove("active"));
+  if(btn) btn.classList.add("active");
+  empSectionIdx = EMP_SECTIONS.indexOf(sec);
+  updateEmpNavBtns();
+}
+
+function updateEmpNavBtns(){
+  const prev=document.getElementById("empPrevBtn");
+  const next=document.getElementById("empNextBtn");
+  const save=document.getElementById("empSaveBtn");
+  if(prev) prev.style.display = empSectionIdx>0?"":"none";
+  if(next) next.style.display = empSectionIdx<EMP_SECTIONS.length-1?"":"none";
+  if(save) save.style.display = empSectionIdx===EMP_SECTIONS.length-1?"":"none";
+}
+
+function nextEmpSection(){
+  if(empSectionIdx < EMP_SECTIONS.length-1){
+    empSectionIdx++;
+    const sec = EMP_SECTIONS[empSectionIdx];
+    const btn = document.querySelectorAll(".admin-sub-btn")[empSectionIdx];
+    switchEmpSection(sec, btn);
+  }
+}
+
+function prevEmpSection(){
+  if(empSectionIdx > 0){
+    empSectionIdx--;
+    const sec = EMP_SECTIONS[empSectionIdx];
+    const btn = document.querySelectorAll(".admin-sub-btn")[empSectionIdx];
+    switchEmpSection(sec, btn);
+  }
+}
+
+function openEmpModal(){
+  editingEmpId=null;
+  document.getElementById("empModalTitle").textContent="Add Employee";
+  clearEmpForm();
+  // Populate domain dropdown
+  const domSel = document.getElementById("eDomainEmp");
+  if(domSel){
+    domSel.innerHTML='<option value="">— Select —</option>';
+    domains.forEach(d=>{const o=document.createElement("option");o.value=d.Name;o.textContent=d.Name;domSel.appendChild(o);});
+  }
+  empSectionIdx=0;
+  switchEmpSection("employment", document.querySelectorAll(".admin-sub-btn")[0]);
+  document.getElementById("empModal").style.display="flex";
+}
+
+function openEditEmpModal(id){
+  const e = employees.find(emp=>emp.id===id); if(!e) return;
+  editingEmpId=id;
+  document.getElementById("empModalTitle").textContent="Edit Employee";
+  // Populate domain dropdown first
+  const domSel=document.getElementById("eDomainEmp");
+  if(domSel){
+    domSel.innerHTML='<option value="">— Select —</option>';
+    domains.forEach(d=>{const o=document.createElement("option");o.value=d.Name;o.textContent=d.Name;domSel.appendChild(o);});
+  }
+  // Fill all fields
+  const setVal=(id,val)=>{ const el=document.getElementById(id); if(el) el.value=val||""; };
+  setVal("eEmpCode",e.empCode); setVal("eName",e.name); setVal("eDesignation",e.designation);
+  setVal("eGGSDOJ",e.ggsDOJ); setVal("eDOJISES",e.dojISES);
+  setVal("eExpMonths",e.expMonths); setVal("eTotalYrsGGS",e.totalYrsGGS);
+  setVal("eBaseLoc",e.baseLoc); setVal("eCurrentLoc",e.currentLoc);
+  setVal("eAssignment",e.assignment); setVal("eFor",e.empFor||"GGS");
+  setVal("eAccount",e.account); setVal("eHRPOC",e.hrPOC);
+  setVal("eSupOnsite",e.supOnsite); setVal("eSupOffsite",e.supOffsite);
+  setVal("eStatus",e.status||"Active"); setVal("ePOC",e.poc);
+  setVal("eDomainEmp",e.domain);
+  // Personal
+  setVal("eDOB",e.dob); setVal("eAge",e.age); setVal("eGender",e.gender);
+  setVal("eMarital",e.marital); setVal("eBlood",e.blood); setVal("eTShirt",e.tshirt);
+  setVal("eNationality",e.nationality); setVal("eEducation",e.education);
+  setVal("eFatherName",e.fatherName); setVal("eFatherOcc",e.fatherOcc);
+  setVal("eMotherOcc",e.motherOcc); setVal("eGuardianName",e.guardianName);
+  setVal("eGuardianOcc",e.guardianOcc);
+  // Contact
+  setVal("eContact",e.contact); setVal("ePersonalEmail",e.personalEmail);
+  setVal("eGGSEmail",e.ggsEmail); setVal("ePresentAddr",e.presentAddr);
+  setVal("ePermanentAddr",e.permanentAddr);
+  // Emergency
+  setVal("eEC1Name",e.ec1Name); setVal("eEC1Rel",e.ec1Rel); setVal("eEC1Phone",e.ec1Phone);
+  setVal("eEC2Name",e.ec2Name); setVal("eEC2Rel",e.ec2Rel); setVal("eEC2Phone",e.ec2Phone);
+  // Bank
+  setVal("eBankAcc",e.bankAcc); setVal("eBeneficiary",e.beneficiary);
+  setVal("eBankName",e.bankName); setVal("eIFSC",e.ifsc);
+  // Documents
+  setVal("ePAN",e.pan); setVal("eAadhaar",e.aadhaar); setVal("eUAN",e.uan);
+  setVal("eInsurance",e.insurance); setVal("eBond",e.bond||"NA");
+  setVal("eBondDoc",e.bondDoc); setVal("eBGV",e.bgv);
+  setVal("ePersonalFile",e.personalFile); setVal("eRemarks",e.remarks);
+  empSectionIdx=0;
+  switchEmpSection("employment", document.querySelectorAll(".admin-sub-btn")[0]);
+  document.getElementById("empModal").style.display="flex";
+}
+
+function closeEmpModal(){
+  document.getElementById("empModal").style.display="none";
+  editingEmpId=null;
+}
+
+function clearEmpForm(){
+  const ids=["eEmpCode","eName","eDesignation","eGGSDOJ","eDOJISES","eExpMonths",
+    "eTotalYrsGGS","eBaseLoc","eCurrentLoc","eAssignment","eAccount","eHRPOC",
+    "eSupOnsite","eSupOffsite","ePOC","eDOB","eAge","eNationality","eEducation",
+    "eFatherName","eFatherOcc","eMotherOcc","eGuardianName","eGuardianOcc",
+    "eContact","ePersonalEmail","eGGSEmail","ePresentAddr","ePermanentAddr",
+    "eEC1Name","eEC1Rel","eEC1Phone","eEC2Name","eEC2Rel","eEC2Phone",
+    "eBankAcc","eBeneficiary","eBankName","eIFSC","ePAN","eAadhaar","eUAN",
+    "eInsurance","eBondDoc","eRemarks"];
+  ids.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=""; });
+  ["eGender","eMarital","eBlood","eTShirt","eFor","eStatus","eBond","eBGV","ePersonalFile"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value = id==="eFor"?"GGS": id==="eStatus"?"Active": id==="eBond"?"NA":"";
+  });
+}
+
+function getEmpFormData(){
+  const getVal = id => { const el=document.getElementById(id); return el?el.value.trim():""; };
+  return {
+    id: editingEmpId||("EMP-"+Date.now()),
+    empCode:getVal("eEmpCode"), name:getVal("eName"), designation:getVal("eDesignation"),
+    domain:getVal("eDomainEmp"), ggsDOJ:getVal("eGGSDOJ"), dojISES:getVal("eDOJISES"),
+    expMonths:getVal("eExpMonths"), totalYrsGGS:getVal("eTotalYrsGGS"),
+    baseLoc:getVal("eBaseLoc"), currentLoc:getVal("eCurrentLoc"),
+    assignment:getVal("eAssignment"), empFor:getVal("eFor"),
+    account:getVal("eAccount"), hrPOC:getVal("eHRPOC"),
+    supOnsite:getVal("eSupOnsite"), supOffsite:getVal("eSupOffsite"),
+    status:getVal("eStatus"), poc:getVal("ePOC"),
+    dob:getVal("eDOB"), age:getVal("eAge"), gender:getVal("eGender"),
+    marital:getVal("eMarital"), blood:getVal("eBlood"), tshirt:getVal("eTShirt"),
+    nationality:getVal("eNationality"), education:getVal("eEducation"),
+    fatherName:getVal("eFatherName"), fatherOcc:getVal("eFatherOcc"),
+    motherOcc:getVal("eMotherOcc"), guardianName:getVal("eGuardianName"),
+    guardianOcc:getVal("eGuardianOcc"),
+    contact:getVal("eContact"), personalEmail:getVal("ePersonalEmail"),
+    ggsEmail:getVal("eGGSEmail"), presentAddr:getVal("ePresentAddr"),
+    permanentAddr:getVal("ePermanentAddr"),
+    ec1Name:getVal("eEC1Name"), ec1Rel:getVal("eEC1Rel"), ec1Phone:getVal("eEC1Phone"),
+    ec2Name:getVal("eEC2Name"), ec2Rel:getVal("eEC2Rel"), ec2Phone:getVal("eEC2Phone"),
+    bankAcc:getVal("eBankAcc"), beneficiary:getVal("eBeneficiary"),
+    bankName:getVal("eBankName"), ifsc:getVal("eIFSC"),
+    pan:getVal("ePAN"), aadhaar:getVal("eAadhaar"), uan:getVal("eUAN"),
+    insurance:getVal("eInsurance"), bond:getVal("eBond"), bondDoc:getVal("eBondDoc"),
+    bgv:getVal("eBGV"), personalFile:getVal("ePersonalFile"), remarks:getVal("eRemarks"),
+    addedDate:today()
+  };
+}
+
+async function saveEmployee(){
+  const data = getEmpFormData();
+  if(!data.name){ showToast("Employee name is required","error"); return; }
+  const btn=document.getElementById("empSaveBtn"); btn.disabled=true; btn.textContent="Saving…";
+  try{
+    if(editingEmpId){
+      await api("POST",{action:"updateEmployee",data});
+      employees=employees.map(e=>e.id===editingEmpId?data:e);
+    } else {
+      await api("POST",{action:"saveEmployee",data});
+      employees.push(data);
+    }
+    closeEmpModal(); renderHR();
+    showToast("✅ Employee saved","success");
+  }catch(e){ showToast("❌ Save failed","error"); }
+  finally{ btn.disabled=false; btn.textContent="💾 Save Employee"; }
+}
+
+async function deleteEmployee(id){
+  if(!confirm("Delete this employee record?")) return;
+  try{
+    await api("POST",{action:"deleteEmployee",id});
+    employees=employees.filter(e=>e.id!==id);
+    renderHR(); showToast("Employee deleted","info");
+  }catch(e){ showToast("❌ Failed","error"); }
+}
+
+function viewEmpDetail(id){
+  const e=employees.find(emp=>emp.id===id); if(!e) return;
+  openEditEmpModal(id); // Open in edit mode to view all sections
+}
 
 function showToast(msg,type="info"){ const w=document.getElementById("toastWrap"); const el=document.createElement("div"); el.className=`toast ${type}`; el.textContent=msg; w.appendChild(el); setTimeout(()=>el.remove(),3500); }
 </script>
