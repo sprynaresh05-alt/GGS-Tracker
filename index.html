@@ -221,6 +221,22 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
 .admin-sub-btn:hover{color:var(--blue)}
 .admin-sub-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
 
+/* ── 3 COLUMN FORM ROW ── */
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:0}
+@media(max-width:600px){.form-row-3{grid-template-columns:1fr}}
+
+/* ── SOURCING CARD ── */
+.source-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:center;gap:16px;transition:box-shadow .2s}
+.source-card:hover{box-shadow:0 4px 16px rgba(26,43,95,.1)}
+.source-card-left{flex:1;min-width:0}
+.source-card-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.source-card-folder{font-size:12px;color:var(--blue);font-weight:600;background:#e8f0ff;padding:5px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;max-width:100%;word-break:break-all}
+.source-card-meta{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
+.source-card-badge{font-size:11px;color:var(--muted);background:#f0f4ff;padding:3px 8px;border-radius:6px}
+.copy-btn{background:var(--blue);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap;font-weight:600;transition:opacity .2s}
+.copy-btn:hover{opacity:.85}
+.copy-btn.copied{background:#10b981}
+
 /* ── STICKY TABLE ── */
 .table-wrap{overflow-x:auto}
 .table-scroll{overflow-y:auto;max-height:calc(100vh - 280px)}
@@ -275,6 +291,7 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
   <nav class="nav" id="mainNav">
     <button class="nav-btn tab-dashboard active" onclick="switchView('dashboard',this)">📊 Dashboard</button>
     <button class="nav-btn tab-positions" onclick="switchView('positions',this)">📋 Positions</button>
+    <button class="nav-btn tab-sourcing" onclick="switchView('sourcing',this)">📁 Sourcing</button>
     <button class="nav-btn tab-screening" onclick="switchView('screening',this)">🔍 Screening</button>
     <button class="nav-btn tab-pipeline" onclick="switchView('pipeline',this)">🔄 Pipeline</button>
     <button class="nav-btn tab-hr" onclick="switchView('hr',this)">👥 HR</button>
@@ -584,6 +601,92 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
   </div>
 </div>
 
+
+<!-- ADD/EDIT SCREENING CANDIDATE MODAL -->
+<div class="modal-overlay" id="screenModal" style="display:none" onclick="closeScreenModal()">
+  <div class="modal modal-lg" style="max-width:720px" onclick="event.stopPropagation()">
+    <div class="modal-title" id="screenModalTitle">Add Screened Candidate</div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-label">First Name *</label><input class="form-input" id="scFirstName" placeholder="First Name"/></div>
+      <div class="form-group"><label class="form-label">Last Name *</label><input class="form-input" id="scLastName" placeholder="Last Name"/></div>
+      <div class="form-group"><label class="form-label">Gender</label>
+        <select class="form-input" id="scGender">
+          <option value="">— Select —</option>
+          <option>Male</option><option>Female</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Mobile *</label><input class="form-input" id="scMobile" placeholder="Mobile Number"/></div>
+      <div class="form-group"><label class="form-label">Email ID</label><input class="form-input" id="scEmail" placeholder="email@example.com"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Current Location</label><input class="form-input" id="scCurrentLoc" placeholder="Current Location"/></div>
+      <div class="form-group"><label class="form-label">Work Location</label><input class="form-input" id="scWorkLoc" placeholder="Work Location"/></div>
+    </div>
+    <div class="form-row-3">
+      <div class="form-group"><label class="form-label">Experience (yrs)</label><input class="form-input" id="scExp" placeholder="e.g. 5"/></div>
+      <div class="form-group"><label class="form-label">Current CTC</label><input class="form-input" id="scCTC" placeholder="e.g. 8 LPA"/></div>
+      <div class="form-group"><label class="form-label">Take Home</label><input class="form-input" id="scTakeHome" placeholder="e.g. 55000/mo"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Expected Take-Home / CTC</label><input class="form-input" id="scExpCTC" placeholder="e.g. 70000/mo"/></div>
+      <div class="form-group"><label class="form-label">Notice Period</label><input class="form-input" id="scNotice" placeholder="e.g. 30 days"/></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Communication</label>
+        <select class="form-input" id="scComm">
+          <option value="">— Select —</option>
+          <option>Poor</option><option>Below Average</option><option>Average</option>
+          <option>Above Average</option><option>Good</option><option>Excellent</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Preferred Location</label>
+        <select class="form-input" id="scPrefLoc">
+          <option value="">— Select —</option>
+          <option>Chennai</option><option>Bangalore</option>
+          <option>Tiruvallur</option><option>Ahmedabad</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Beeline ID (Position) *</label>
+        <select class="form-input" id="scBeelineId"></select>
+      </div>
+      <div class="form-group"><label class="form-label">Batch / Referral</label>
+        <input class="form-input" id="scBatch" readonly style="background:#f0f4ff;color:var(--blue);font-weight:600" placeholder="Auto-filled from Sourcing"/>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Beeline Details</label>
+      <input class="form-input" id="scBeelineDetails" placeholder="Any specific beeline details"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Candidate Status *</label>
+        <select class="form-input" id="scStatus" onchange="toggleScreenStatusFields()">
+          <option value="">— Select —</option>
+          <option>Interested</option>
+          <option>Not Interested</option>
+          <option>Requested JD</option>
+          <option>Unresponsive / Unreachable</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Screening Date</label>
+        <input class="form-input" id="scDate" readonly style="background:#f0f4ff;color:var(--blue)"/>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Feedback</label>
+      <textarea class="form-input" id="scFeedback" rows="2" placeholder="Screening feedback…" style="resize:vertical"></textarea>
+    </div>
+    <div class="form-group"><label class="form-label">Remarks</label>
+      <textarea class="form-input" id="scRemarks" rows="2" placeholder="Additional remarks…" style="resize:vertical"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeScreenModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveScreenBtn" onclick="saveScreenedCandidate()">Save Candidate</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST & LOADING -->
 <div class="toast-wrap" id="toastWrap"></div>
 <div class="loading-overlay" id="loadingOverlay" style="display:none"><div class="loading-spinner"></div><div class="loading-text" id="loadingText">Connecting…</div></div>
@@ -617,6 +720,8 @@ const STAGE_STYLE = {
 // STATE
 // ═══════════════════════════════════════════════════════════
 let positions=[], candidates=[], employees=[], spocs=[], domains=[], interviews=[];
+let screenedCandidates=[];  // candidates added during screening
+let editingScreenId=null;
 let activeView="dashboard", selectedPosId=null;
 let filterDomain="All", filterStatus="All", searchQ="";
 let pipelineStageFilter="All";
@@ -868,6 +973,7 @@ function renderAll(){
   populateSelects();
   if(activeView==="dashboard")      renderDashboard();
   else if(activeView==="positions")  renderPositions();
+  else if(activeView==="sourcing")   renderSourcing();
   else if(activeView==="screening")  renderScreening();
   else if(activeView==="pipeline")   renderPipeline();
   else if(activeView==="hr")         renderHR();
@@ -884,6 +990,7 @@ function switchView(view,btn){
   // Render directly without touching tab visibility
   if(view==="dashboard")      renderDashboard();
   else if(view==="positions")  renderPositions();
+  else if(view==="sourcing")   renderSourcing();
   else if(view==="screening")  renderScreening();
   else if(view==="pipeline")   renderPipeline();
   else if(view==="hr")         renderHR();
@@ -1595,11 +1702,11 @@ function doLogout(){
 // ROLE-BASED TAB VISIBILITY
 // ═══════════════════════════════════════════════════════════
 let roles = [
-  {ID:"ROLE-001", Name:"Admin",     Tabs:"dashboard,positions,screening,pipeline,hr"},
-  {ID:"ROLE-002", Name:"SPOC",      Tabs:"dashboard,positions,screening,pipeline"},
-  {ID:"ROLE-003", Name:"Recruiter", Tabs:"dashboard,positions,screening,pipeline"},
+  {ID:"ROLE-001", Name:"Admin",     Tabs:"dashboard,positions,sourcing,screening,pipeline,hr"},
+  {ID:"ROLE-002", Name:"SPOC",      Tabs:"dashboard,positions,sourcing,screening,pipeline"},
+  {ID:"ROLE-003", Name:"Recruiter", Tabs:"dashboard,positions,sourcing,screening,pipeline"},
   {ID:"ROLE-004", Name:"HR",        Tabs:"dashboard,hr"},
-  {ID:"ROLE-005", Name:"Screener",  Tabs:"dashboard,hr"},
+  {ID:"ROLE-005", Name:"Screener",  Tabs:"dashboard,sourcing,screening"},
 ];
 
 function applyTabVisibility(){
@@ -1612,6 +1719,7 @@ function applyTabVisibility(){
   const tabMap = {
     "dashboard": ".tab-dashboard",
     "positions": ".tab-positions",
+    "sourcing":  ".tab-sourcing",
     "screening": ".tab-screening",
     "pipeline":  ".tab-pipeline",
     "hr":        ".tab-hr",
@@ -1627,11 +1735,12 @@ function applyTabVisibility(){
   document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
   if(firstBtn){ firstBtn.classList.add("active"); activeView=firstAllowed; }
   // Render the first allowed view directly
-  if(firstAllowed==="dashboard") renderDashboard();
+  if(firstAllowed==="dashboard")  renderDashboard();
   else if(firstAllowed==="positions") renderPositions();
+  else if(firstAllowed==="sourcing")  renderSourcing();
   else if(firstAllowed==="screening") renderScreening();
-  else if(firstAllowed==="pipeline") renderPipeline();
-  else if(firstAllowed==="hr") renderHR();
+  else if(firstAllowed==="pipeline")  renderPipeline();
+  else if(firstAllowed==="hr")        renderHR();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1879,15 +1988,295 @@ function downloadTemplate(){
 }
 
 // ═══════════════════════════════════════════════════════════
+// SOURCING TAB
+// ═══════════════════════════════════════════════════════════
+function getBatchNo(posId){
+  // Count how many batches exist for this position
+  const existing = screenedCandidates.filter(c=>c.positionId===posId);
+  const batches = [...new Set(existing.map(c=>c.batch||""))].filter(Boolean);
+  const nextNum = batches.length + 1;
+  return "Batch" + String(nextNum).padStart(2,"0");
+}
+
+function getFolderName(pos){
+  if(!pos) return "";
+  const batch = getBatchNo(pos.id);
+  const parts = [
+    pos.id,
+    (pos.skillSet||"").replace(/[\/\\:*?"<>|]/g,""),
+    (pos.manager||"").replace(/[\/\\:*?"<>|]/g,""),
+    (pos.location||"").replace(/[\/\\:*?"<>|]/g,""),
+    batch
+  ];
+  return parts.join(" – ");
+}
+
+function copyFolderName(posId, btnEl){
+  const pos = positions.find(p=>p.id===posId);
+  if(!pos) return;
+  const name = getFolderName(pos);
+  navigator.clipboard.writeText(name).then(()=>{
+    btnEl.textContent="✅ Copied!";
+    btnEl.classList.add("copied");
+    setTimeout(()=>{ btnEl.textContent="📋 Copy"; btnEl.classList.remove("copied"); }, 2000);
+  }).catch(()=>{
+    // Fallback for browsers that block clipboard
+    const ta = document.createElement("textarea");
+    ta.value = name; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy"); ta.remove();
+    btnEl.textContent="✅ Copied!"; btnEl.classList.add("copied");
+    setTimeout(()=>{ btnEl.textContent="📋 Copy"; btnEl.classList.remove("copied"); }, 2000);
+  });
+}
+
+function renderSourcing(){
+  const openPos = positions.filter(p=>(p.status||"Open")==="Open");
+  const cards = openPos.length===0
+    ? `<div class="empty-state"><div class="empty-icon">📁</div><div class="empty-text">No open positions need sourcing right now</div></div>`
+    : openPos.map(pos=>{
+        const folderName = getFolderName(pos);
+        const sourced = screenedCandidates.filter(c=>c.positionId===pos.id).length;
+        const batch = getBatchNo(pos.id);
+        return `<div class="source-card">
+          <div class="source-card-left">
+            <div class="source-card-title">${pos.skillSet} <span style="color:var(--muted);font-weight:400;font-size:12px">· ${pos.id}</span></div>
+            <div style="margin:6px 0">
+              <div class="source-card-folder">
+                📁 ${folderName}
+              </div>
+            </div>
+            <div class="source-card-meta">
+              <span class="source-card-badge">👤 ${pos.manager}</span>
+              <span class="source-card-badge">📍 ${pos.location}</span>
+              <span class="source-card-badge">🌐 ${pos.domain||"—"}</span>
+              <span class="source-card-badge">📦 ${batch}</span>
+              <span class="source-card-badge" style="background:#dcfce7;color:#166534">👥 ${sourced} sourced</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+            <button class="copy-btn" onclick="copyFolderName('${pos.id}',this)">📋 Copy</button>
+            <button class="btn btn-primary btn-sm" onclick="openScreenModalForPos('${pos.id}')">+ Add Candidate</button>
+          </div>
+        </div>`;
+      }).join("");
+
+  document.getElementById("mainContent").innerHTML=`
+    <div class="sticky-filters">
+      <div class="filters-row" style="justify-content:space-between">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:var(--navy)">📁 Sourcing</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${openPos.length} open position${openPos.length!==1?"s":""} need sourcing</div>
+        </div>
+      </div>
+    </div>
+    <div>${cards}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
 // SCREENING TAB
 // ═══════════════════════════════════════════════════════════
 function renderScreening(){
+  const rows = screenedCandidates.length===0
+    ? `<tr><td colspan="12" style="text-align:center;color:#9ca3af;padding:28px">No screened candidates yet. Add from the Sourcing tab.</td></tr>`
+    : screenedCandidates.map(c=>{
+        const pos = positions.find(p=>p.id===c.positionId);
+        const statusColor = {
+          "Interested":"#dcfce7;color:#166534",
+          "Not Interested":"#fee2e2;color:#991b1b",
+          "Requested JD":"#fef3c7;color:#92400e",
+          "Unresponsive / Unreachable":"#f3f4f6;color:#6b7280"
+        }[c.status]||"#f3f4f6;color:#6b7280";
+        return `<tr>
+          <td style="font-weight:600">${c.firstName} ${c.lastName}</td>
+          <td style="font-size:12px">${c.mobile||"—"}</td>
+          <td style="font-size:12px">${c.email||"—"}</td>
+          <td style="font-size:12px">${c.positionId||"—"}<br><span style="color:var(--muted);font-size:10px">${pos?.skillSet||""}</span></td>
+          <td style="font-size:12px">${c.exp||"—"}</td>
+          <td style="font-size:12px">${c.ctc||"—"}</td>
+          <td style="font-size:12px">${c.notice||"—"}</td>
+          <td style="font-size:12px">${c.comm||"—"}</td>
+          <td style="font-size:12px">${c.batch||"—"}</td>
+          <td><span style="background:${statusColor};padding:3px 8px;border-radius:8px;font-size:11px;font-weight:600">${c.status||"—"}</span></td>
+          <td style="font-size:11px;color:var(--muted)">${c.screenDate||"—"}</td>
+          <td style="display:flex;gap:4px">
+            <button class="btn btn-ghost btn-sm" onclick="openEditScreenModal('${c.id}')">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteScreenedCandidate('${c.id}')">✕</button>
+          </td>
+        </tr>`;
+      }).join("");
+
   document.getElementById("mainContent").innerHTML=`
-    <div style="text-align:center;padding:60px 20px;background:white;border-radius:14px;border:1px solid var(--border)">
-      <div style="font-size:48px;margin-bottom:14px">🔍</div>
-      <div style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px">Screening Module</div>
-      <div style="font-size:13px;color:var(--muted)">Coming soon — requirements will be added in the next phase.</div>
+    <div class="sticky-filters">
+      <div class="filters-row" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:20px;font-weight:700;color:var(--navy)">🔍 Screening</div>
+          <div style="font-size:12px;color:var(--muted)">${screenedCandidates.length} candidate${screenedCandidates.length!==1?"s":""}</div>
+        </div>
+        <button class="btn btn-primary" onclick="openScreenModal()">+ Add Candidate</button>
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="table-scroll"><table>
+        <thead><tr>
+          <th>Name</th><th>Mobile</th><th>Email</th><th>Position</th>
+          <th>Exp</th><th>CTC</th><th>Notice</th><th>Communication</th>
+          <th>Batch</th><th>Status</th><th>Screen Date</th><th></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
     </div>`;
+}
+
+// ── SCREENING MODAL FUNCTIONS ──
+function openScreenModal(){
+  editingScreenId=null;
+  document.getElementById("screenModalTitle").textContent="Add Screened Candidate";
+  // Clear all fields
+  ["scFirstName","scLastName","scMobile","scEmail","scCurrentLoc","scWorkLoc",
+   "scExp","scCTC","scTakeHome","scExpCTC","scNotice","scBeelineDetails",
+   "scFeedback","scRemarks"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value="";
+  });
+  ["scGender","scComm","scPrefLoc","scStatus"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value="";
+  });
+  document.getElementById("scDate").value = today();
+  document.getElementById("scBatch").value = "";
+  populateBeelineDropdown();
+  document.getElementById("screenModal").style.display="flex";
+}
+
+function openScreenModalForPos(posId){
+  openScreenModal();
+  setTimeout(()=>{
+    const sel = document.getElementById("scBeelineId");
+    if(sel){ sel.value=posId; updateBatchFromPosition(); }
+  }, 50);
+}
+
+function openEditScreenModal(id){
+  const c = screenedCandidates.find(sc=>sc.id===id); if(!c) return;
+  editingScreenId=id;
+  document.getElementById("screenModalTitle").textContent="Edit Screened Candidate";
+  populateBeelineDropdown();
+  document.getElementById("scFirstName").value=c.firstName||"";
+  document.getElementById("scLastName").value=c.lastName||"";
+  document.getElementById("scGender").value=c.gender||"";
+  document.getElementById("scMobile").value=c.mobile||"";
+  document.getElementById("scEmail").value=c.email||"";
+  document.getElementById("scCurrentLoc").value=c.currentLoc||"";
+  document.getElementById("scWorkLoc").value=c.workLoc||"";
+  document.getElementById("scExp").value=c.exp||"";
+  document.getElementById("scCTC").value=c.ctc||"";
+  document.getElementById("scTakeHome").value=c.takeHome||"";
+  document.getElementById("scExpCTC").value=c.expCTC||"";
+  document.getElementById("scNotice").value=c.notice||"";
+  document.getElementById("scComm").value=c.comm||"";
+  document.getElementById("scPrefLoc").value=c.prefLoc||"";
+  document.getElementById("scBeelineId").value=c.positionId||"";
+  document.getElementById("scBatch").value=c.batch||"";
+  document.getElementById("scBeelineDetails").value=c.beelineDetails||"";
+  document.getElementById("scStatus").value=c.status||"";
+  document.getElementById("scDate").value=c.screenDate||today();
+  document.getElementById("scFeedback").value=c.feedback||"";
+  document.getElementById("scRemarks").value=c.remarks||"";
+  document.getElementById("screenModal").style.display="flex";
+}
+
+function closeScreenModal(){ document.getElementById("screenModal").style.display="none"; editingScreenId=null; }
+
+function populateBeelineDropdown(){
+  const sel=document.getElementById("scBeelineId"); if(!sel) return;
+  sel.innerHTML='<option value="">— Select Position —</option>';
+  positions.filter(p=>(p.status||"Open")==="Open").forEach(p=>{
+    const o=document.createElement("option");
+    o.value=p.id; o.textContent=p.id+" – "+p.skillSet;
+    sel.appendChild(o);
+  });
+  sel.onchange = updateBatchFromPosition;
+}
+
+function updateBatchFromPosition(){
+  const posId = document.getElementById("scBeelineId").value;
+  if(!posId){ document.getElementById("scBatch").value=""; return; }
+  const pos = positions.find(p=>p.id===posId);
+  if(!pos) return;
+  document.getElementById("scBatch").value = getFolderName(pos);
+}
+
+function toggleScreenStatusFields(){ /* future use */ }
+
+async function saveScreenedCandidate(){
+  const firstName=document.getElementById("scFirstName").value.trim();
+  const lastName=document.getElementById("scLastName").value.trim();
+  const mobile=document.getElementById("scMobile").value.trim();
+  const positionId=document.getElementById("scBeelineId").value;
+  const status=document.getElementById("scStatus").value;
+  if(!firstName||!mobile||!positionId||!status){
+    showToast("First Name, Mobile, Position and Status are required","error"); return;
+  }
+  const btn=document.getElementById("saveScreenBtn"); btn.disabled=true; btn.textContent="Saving…";
+  const sc={
+    id: editingScreenId||("SC-"+Date.now()),
+    firstName, lastName, gender:document.getElementById("scGender").value,
+    mobile, email:document.getElementById("scEmail").value.trim(),
+    currentLoc:document.getElementById("scCurrentLoc").value.trim(),
+    workLoc:document.getElementById("scWorkLoc").value.trim(),
+    exp:document.getElementById("scExp").value.trim(),
+    ctc:document.getElementById("scCTC").value.trim(),
+    takeHome:document.getElementById("scTakeHome").value.trim(),
+    expCTC:document.getElementById("scExpCTC").value.trim(),
+    notice:document.getElementById("scNotice").value.trim(),
+    comm:document.getElementById("scComm").value,
+    prefLoc:document.getElementById("scPrefLoc").value,
+    positionId, batch:document.getElementById("scBatch").value,
+    beelineDetails:document.getElementById("scBeelineDetails").value.trim(),
+    status, screenDate:document.getElementById("scDate").value||today(),
+    feedback:document.getElementById("scFeedback").value.trim(),
+    remarks:document.getElementById("scRemarks").value.trim(),
+    pipelineStage: status==="Interested" ? "L1 Scheduled" : null,
+    addedToPipeline: status==="Interested"
+  };
+  try{
+    if(editingScreenId){
+      await api("POST",{action:"updateScreened",data:sc});
+      screenedCandidates=screenedCandidates.map(c=>c.id===editingScreenId?sc:c);
+    } else {
+      await api("POST",{action:"saveScreened",data:sc});
+      screenedCandidates.push(sc);
+    }
+    // Auto-add to pipeline candidates if Interested
+    if(status==="Interested" && !editingScreenId){
+      const pipelineCand={
+        id:"C-"+Date.now(), name:firstName+" "+lastName,
+        positionId, stage:"L1 Scheduled",
+        mobile, email:sc.email, exp:sc.exp, ctc:sc.ctc,
+        notice:sc.notice, screenedId:sc.id,
+        addedDate:today()
+      };
+      await api("POST",{action:"saveCandidate",data:pipelineCand});
+      candidates.push(pipelineCand);
+      showToast("✅ Candidate saved & moved to Pipeline!","success");
+    } else {
+      showToast("✅ Candidate saved","success");
+    }
+    closeScreenModal();
+    if(activeView==="screening") renderScreening();
+    else if(activeView==="sourcing") renderSourcing();
+  }catch(e){
+    showToast("❌ Save failed: "+e.message,"error");
+  }
+  finally{ btn.disabled=false; btn.textContent="Save Candidate"; }
+}
+
+async function deleteScreenedCandidate(id){
+  if(!confirm("Delete this screened candidate?")) return;
+  try{
+    await api("POST",{action:"deleteScreened",id});
+    screenedCandidates=screenedCandidates.filter(c=>c.id!==id);
+    renderScreening();
+    showToast("Candidate deleted","info");
+  }catch(e){ showToast("❌ Failed","error"); }
 }
 
 // ═══════════════════════════════════════════════════════════
