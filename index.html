@@ -37,13 +37,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
 .notif-badge{position:absolute;top:-3px;right:-3px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 3px}
 
 /* ── NAV ── */
-.nav{background:var(--white);border-bottom:2px solid var(--border);display:flex;padding:0 20px;overflow-x:auto}
+.nav{background:var(--white);border-bottom:2px solid var(--border);display:flex;padding:0 20px;overflow-x:auto;position:sticky;top:62px;z-index:90;box-shadow:0 2px 8px rgba(26,43,95,.07)}
 .nav-btn{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:13px 16px;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap}
 .nav-btn:hover{color:var(--blue)}
 .nav-btn.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
 
 /* ── MAIN ── */
 .main{flex:1;padding:22px 24px}
+.sticky-filters{position:sticky;top:109px;z-index:80;background:var(--bg);padding-bottom:6px}
 
 /* ── LOGIN ── */
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
@@ -88,7 +89,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
 .bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;font-size:10px;font-weight:700;color:#fff;min-width:20px;transition:width .6s ease}
 
 /* ── SECTION CARDS ── */
-.section-card{background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:0 1px 4px rgba(26,43,95,.07);margin-bottom:20px}
+.section-card{background:#fff;border-radius:12px;border:1px solid var(--border);overflow:visible;box-shadow:0 1px 4px rgba(26,43,95,.07);margin-bottom:20px}
+.section-card > div[style*="overflow-x"]{overflow-x:auto;border-radius:12px}
 .section-card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .section-card-title{font-size:13px;font-weight:700;color:var(--text)}
 
@@ -111,7 +113,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
 /* ── TABLE ── */
 table{width:100%;border-collapse:collapse}
 thead tr{background:#f8faff}
-th{padding:10px 14px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+th{padding:10px 14px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:168px;z-index:70;background:#f8faff;box-shadow:0 2px 4px rgba(26,43,95,.08)}
 td{padding:10px 14px;font-size:12.5px;color:var(--text);border-bottom:1px solid #f0f4ff;vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#fafcff}
@@ -1037,6 +1039,7 @@ function renderPositions(){
     <button class="btn btn-ghost" onclick="downloadTemplate()" style="border-color:#8b5cf6;color:#5b21b6;background:#ede9fe">📄 Template</button>
   ` : "";
   document.getElementById("mainContent").innerHTML=`
+    <div class="sticky-filters">
     <div class="filters-row">
       <input class="search-input" id="posSearch" placeholder="🔍  Search by ID, skill, manager, SPOC…" value="${searchQ}" oninput="searchQ=this.value;renderPositions()"/>
       <select class="filter-select" onchange="filterDomain=this.value;renderPositions()">
@@ -1049,6 +1052,7 @@ function renderPositions(){
         <option ${filterStatus==="Filled"?"selected":""}>Filled</option>
       </select>
       ${writeActions}
+    </div>
     </div>
     <div class="section-card">
       <div class="section-card-header"><div class="section-card-title">All Positions (${filtered.length})</div></div>
