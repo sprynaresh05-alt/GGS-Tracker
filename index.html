@@ -813,6 +813,15 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
     <div class="form-group"><label class="form-label">Feedback</label>
       <textarea class="form-input" id="scFeedback" rows="2" placeholder="Screening feedback…" style="resize:vertical"></textarea>
     </div>
+    <div class="form-group"><label class="form-label">SPOC Comment *</label>
+      <select class="form-input" id="scSPOCComment" onchange="onSPOCCommentChange()">
+        <option value="">— Select —</option>
+        <option value="Consider">Consider</option>
+        <option value="Reject">Reject</option>
+        <option value="Hold">Hold</option>
+      </select>
+      <div id="scSPOCCommentHint" style="font-size:11px;color:#10b981;margin-top:4px;display:none">✅ Candidate will be auto-moved to Pipeline as "Profile Shortlisted"</div>
+    </div>
     <div class="form-group"><label class="form-label">Remarks</label>
       <textarea class="form-input" id="scRemarks" rows="2" placeholder="Additional remarks…" style="resize:vertical"></textarea>
     </div>
@@ -834,12 +843,14 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
 // ═══════════════════════════════════════════════════════════
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrRKuubyOyLD8ooLjZt4YR_ai9hrpAA951PMurYHEtXmTzuy3kny_SSrDxVGTWtqyh/exec";
 
-const STAGES = ["Screen Rejected","L1 Scheduled","L1 Rejected","L2 Scheduled","L2 Rejected","Hold","Offer Extended","Offer Released","Onboarded","Dropped"];
-const ACTIVE_STAGES = ["L1 Scheduled","L1 Rejected","L2 Scheduled","L2 Rejected","Hold","Offer Extended","Offer Released","Onboarded","Dropped"];
+const STAGES = ["Profile Shortlisted","Profile Shared","Screen Rejected","L1 Scheduled","L1 Rejected","L2 Scheduled","L2 Rejected","Hold","Offer Extended","Offer Released","Onboarded","Dropped"];
+const ACTIVE_STAGES = ["Profile Shortlisted","Profile Shared","L1 Scheduled","L2 Scheduled","Offer Extended","Offer Released","Onboarded"];
 const REJECTED_STAGES = ["Screen Rejected","L1 Rejected","L2 Rejected","Dropped"];
 const INTERVIEW_STAGES = ["L1 Scheduled","L2 Scheduled"];
 
 const STAGE_STYLE = {
+  "Profile Shortlisted":{bg:"#e0f2fe",color:"#0369a1",dot:"#0ea5e9"},
+  "Profile Shared":  {bg:"#dbeafe",color:"#1e40af",dot:"#3b82f6"},
   "Screen Rejected": {bg:"#fee2e2",color:"#991b1b",dot:"#ef4444"},
   "L1 Scheduled":    {bg:"#ede9fe",color:"#5b21b6",dot:"#8b5cf6"},
   "L1 Rejected":     {bg:"#fecaca",color:"#7f1d1d",dot:"#dc2626"},
@@ -1091,7 +1102,17 @@ function getHighest(posId){
 }
 function getNotifs(){ return positions.filter(p=>{ if(getStatus(p.id)==="Filled")return false; const cc=candidates.filter(c=>c.positionId===p.id); if(!cc.length)return daysSince(p.openedDate)>=3; const last=cc.reduce((mx,c)=>{const d=new Date(c.lastUpdated||p.openedDate);return d>mx?d:mx;},new Date(p.openedDate||"2000-01-01")); return Math.floor((new Date()-last)/86400000)>=3; }); }
 function stageBadgeHTML(stage){ if(!stage)return""; const s=STAGE_STYLE[stage]||{bg:"#f3f4f6",color:"#374151",dot:"#9ca3af"}; return `<span class="stage-badge" style="background:${s.bg};color:${s.color}"><span class="dot" style="background:${s.dot}"></span>${stage}</span>`; }
-function pipelineStepsHTML(hs){ const idx=ACTIVE_STAGES.indexOf(hs); return ACTIVE_STAGES.map((s,i)=>{const st=STAGE_STYLE[s],active=i<=idx; const bg=active?"background:"+st.dot:""; return '<div class="pipeline-step'+(active?" active":"")+'" style="'+bg+'">'+s.split(" ")[0]+'</div>';}).join(""); }
+function pipelineStepsHTML(hs){
+  const PROGRESS_STAGES = ["Profile Shortlisted","Profile Shared","L1 Scheduled","L2 Scheduled","Offer Extended","Offer Released","Onboarded"];
+  const idx = PROGRESS_STAGES.indexOf(hs);
+  return PROGRESS_STAGES.map((s,i)=>{
+    const st = STAGE_STYLE[s]||{dot:"#9ca3af"};
+    const active = i<=idx && idx>=0;
+    const bg = active ? "background:"+st.dot : "";
+    const label = s.replace("Profile ","").replace(" Scheduled","").replace(" Extended","").replace(" Released","");
+    return '<div class="pipeline-step'+(active?" active":"")+'" style="'+bg+'">'+label+'</div>';
+  }).join("");
+}
 function canWrite(){ return !currentUser||currentUser.Permission!=="Read"; }
 
 function getQuarter(dateStr){
@@ -2229,6 +2250,11 @@ function renderScreening(){
           <td style="font-size:12px">${c.comm||"—"}</td>
           <td style="font-size:12px">${c.batch||"—"}</td>
           <td><span style="background:${statusColor};padding:3px 8px;border-radius:8px;font-size:11px;font-weight:600">${c.status||"—"}</span></td>
+          <td><span style="background:${
+            c.spocComment==="Consider"?"#dcfce7;color:#166534":
+            c.spocComment==="Reject"?"#fee2e2;color:#991b1b":
+            c.spocComment==="Hold"?"#fef3c7;color:#92400e":"#f3f4f6;color:#6b7280"
+          };padding:3px 8px;border-radius:8px;font-size:11px;font-weight:600">${c.spocComment||"—"}</span></td>
           <td style="font-size:11px;color:var(--muted)">${c.screenDate||"—"}</td>
           <td style="display:flex;gap:4px">
             <button class="btn btn-ghost btn-sm" onclick="openEditScreenModal('${c.id}')">✏️</button>
@@ -2252,7 +2278,7 @@ function renderScreening(){
         <thead><tr>
           <th>Name</th><th>Mobile</th><th>Email</th><th>Position</th>
           <th>Exp</th><th>CTC</th><th>Notice</th><th>Communication</th>
-          <th>Batch</th><th>Status</th><th>Screen Date</th><th></th>
+          <th>Batch</th><th>Status</th><th>SPOC Comment</th><th>Screen Date</th><th></th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table></div>
@@ -2269,9 +2295,11 @@ function openScreenModal(){
    "scFeedback","scRemarks"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value="";
   });
-  ["scGender","scComm","scPrefLoc","scStatus"].forEach(id=>{
+  ["scGender","scComm","scPrefLoc","scStatus","scSPOCComment"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value="";
   });
+  const hint=document.getElementById("scSPOCCommentHint");
+  if(hint) hint.style.display="none";
   document.getElementById("scDate").value = today();
   document.getElementById("scBatch").value = "";
   populateBeelineDropdown();
@@ -2311,6 +2339,7 @@ function openEditScreenModal(id){
   document.getElementById("scStatus").value=c.status||"";
   document.getElementById("scDate").value=c.screenDate||today();
   document.getElementById("scFeedback").value=c.feedback||"";
+  document.getElementById("scSPOCComment").value=c.spocComment||"";
   document.getElementById("scRemarks").value=c.remarks||"";
   document.getElementById("screenModal").style.display="flex";
 }
@@ -2338,12 +2367,19 @@ function updateBatchFromPosition(){
 
 function toggleScreenStatusFields(){ /* future use */ }
 
+function onSPOCCommentChange(){
+  const val = document.getElementById("scSPOCComment").value;
+  const hint = document.getElementById("scSPOCCommentHint");
+  if(hint) hint.style.display = val==="Consider" ? "block" : "none";
+}
+
 async function saveScreenedCandidate(){
   const firstName=document.getElementById("scFirstName").value.trim();
   const lastName=document.getElementById("scLastName").value.trim();
   const mobile=document.getElementById("scMobile").value.trim();
   const positionId=document.getElementById("scBeelineId").value;
   const status=document.getElementById("scStatus").value;
+  const spocComment=document.getElementById("scSPOCComment").value;
   if(!firstName||!mobile||!positionId||!status){
     showToast("First Name, Mobile, Position and Status are required","error"); return;
   }
@@ -2365,9 +2401,10 @@ async function saveScreenedCandidate(){
     beelineDetails:document.getElementById("scBeelineDetails").value.trim(),
     status, screenDate:document.getElementById("scDate").value||today(),
     feedback:document.getElementById("scFeedback").value.trim(),
+    spocComment,
     remarks:document.getElementById("scRemarks").value.trim(),
-    pipelineStage: status==="Interested" ? "L1 Scheduled" : null,
-    addedToPipeline: status==="Interested"
+    pipelineStage: spocComment==="Consider" ? "Profile Shortlisted" : null,
+    addedToPipeline: spocComment==="Consider"
   };
   try{
     if(editingScreenId){
@@ -2377,24 +2414,26 @@ async function saveScreenedCandidate(){
       await api("POST",{action:"saveScreened",data:sc});
       screenedCandidates.push(sc);
     }
-    // Auto-add to pipeline candidates if Interested
-    if(status==="Interested" && !editingScreenId){
+    // Auto-add to pipeline as "Profile Shortlisted" if SPOC Comment = Consider
+    if(spocComment==="Consider" && !editingScreenId){
       const pipelineCand={
         id:"C-"+Date.now(), name:firstName+" "+lastName,
-        positionId, stage:"L1 Scheduled",
+        positionId, stage:"Profile Shortlisted",
         mobile, email:sc.email, exp:sc.exp, ctc:sc.ctc,
-        notice:sc.notice, screenedId:sc.id,
-        addedDate:today()
+        notice:sc.notice, prefLoc:sc.prefLoc,
+        screenedId:sc.id, addedDate:today(),
+        interviewDate:"", interviewTime:""
       };
       await api("POST",{action:"saveCandidate",data:pipelineCand});
       candidates.push(pipelineCand);
-      showToast("✅ Candidate saved & moved to Pipeline!","success");
+      showToast("✅ Candidate saved & auto-moved to Pipeline as 'Profile Shortlisted'!","success");
     } else {
       showToast("✅ Candidate saved","success");
     }
     closeScreenModal();
     if(activeView==="screening") renderScreening();
     else if(activeView==="sourcing") renderSourcing();
+    else if(activeView==="positions") renderPositions();
   }catch(e){
     showToast("❌ Save failed: "+e.message,"error");
   }
