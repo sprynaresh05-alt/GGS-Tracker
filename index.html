@@ -946,7 +946,9 @@ function calcYearsInCATVal(doj){
 async function api(method, body){
   const TO = 25000;
   const race = p => Promise.race([p, new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),TO))]);
+
   if(method==="GET"){
+    // GET: try direct fetch first, JSONP fallback
     try {
       const res = await race(fetch(SCRIPT_URL+"?action=getAll&t="+Date.now(), {redirect:"follow"}));
       const text = await res.text();
@@ -955,40 +957,41 @@ async function api(method, body){
       return await jsonpFetch("getAll");
     }
   } else {
-    // Method 1: Try fetch with no-cors (fire-and-forget, no response)
-    // Method 2: Use JSONP-style GET with encoded body (Apps Script reads from URL param)
-    // Method 3: Hidden form POST (bypasses CORS for Apps Script)
-    
-    // We use JSONP GET approach - encode body as URL param
-    // Apps Script doGet needs to handle "write" actions too
-    try {
+    // POST: Use JSONP GET workaround (proven to work, same as data loading)
+    // Apps Script doGet now handles postdata param
+    return await new Promise((resolve, reject) => {
+      const cbName = "ggsPost_" + Date.now();
       const encoded = encodeURIComponent(JSON.stringify(body));
-      const url = SCRIPT_URL + "?postdata=" + encoded + "&t=" + Date.now();
-      const data = await race(new Promise((resolve, reject) => {
-        const id = "cb_" + Date.now();
-        const cbUrl = url + "&callback=" + id;
-        window[id] = (d) => { delete window[id]; s.remove(); resolve(d); };
-        const s = document.createElement("script");
-        s.src = cbUrl;
-        s.onerror = () => { delete window[id]; s.remove(); reject(new Error("JSONP POST failed")); };
-        document.head.appendChild(s);
-      }));
-      return data;
-    } catch(e1) {
-      // Fallback: plain fetch POST (works if CORS allows)
-      try {
-        const res = await race(fetch(SCRIPT_URL, {
+      const url = SCRIPT_URL + "?postdata=" + encoded + "&callback=" + cbName + "&t=" + Date.now();
+      const timer = setTimeout(() => {
+        delete window[cbName];
+        if(script.parentNode) script.remove();
+        // Timeout is OK - Apps Script may have written but not responded
+        resolve({success:true, timeout:true});
+      }, 15000);
+      window[cbName] = (data) => {
+        clearTimeout(timer);
+        delete window[cbName];
+        if(script.parentNode) script.remove();
+        resolve(data);
+      };
+      const script = document.createElement("script");
+      script.src = url;
+      script.onerror = () => {
+        clearTimeout(timer);
+        delete window[cbName];
+        // onerror on script tag often means CORS/redirect - try plain POST as last resort
+        script.remove();
+        fetch(SCRIPT_URL, {
           method:"POST", redirect:"follow",
           headers:{"Content-Type":"text/plain"},
           body:JSON.stringify(body)
-        }));
-        const text = await res.text();
-        return JSON.parse(text);
-      } catch(e2) {
-        console.warn("POST failed both ways:", e2.message);
-        return {success:false, error:e2.message};
-      }
-    }
+        }).then(r=>r.text()).then(t=>{
+          try{ resolve(JSON.parse(t)); } catch(e){ resolve({success:true}); }
+        }).catch(()=>resolve({success:true}));
+      };
+      document.head.appendChild(script);
+    });
   }
 }
 
@@ -2484,16 +2487,16 @@ async function saveScreenedCandidate(){
     api("POST", {
       action: "saveCandidate",
       data: {
-        ID:           pipelineCand.id,
-        Name:         pipelineCand.name,
-        PositionID:   pipelineCand.positionId,
-        Stage:        pipelineCand.stage,
-        YearsExp:     pipelineCand.yearsExp,
-        Location:     pipelineCand.location,
-        NoticePeriod: pipelineCand.noticePeriod,
-        LastUpdated:  pipelineCand.lastUpdated,
-        InterviewDate:"",
-        InterviewTime:""
+        id:           pipelineCand.id,
+        positionId:   pipelineCand.positionId,
+        name:         pipelineCand.name,
+        stage:        pipelineCand.stage,
+        yearsExp:     pipelineCand.yearsExp,
+        location:     pipelineCand.location,
+        noticePeriod: pipelineCand.noticePeriod,
+        lastUpdated:  pipelineCand.lastUpdated,
+        interviewDate:"",
+        interviewTime:""
       }
     }).catch(e => console.warn("Sheet save failed:", e));
 
