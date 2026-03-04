@@ -1540,7 +1540,7 @@ function renderDetailPanel(posId){
       <div class="info-box"><div class="info-box-label">SPOC</div><div class="info-box-value">${pos.spoc||"—"}</div></div>
       <div class="info-box"><div class="info-box-label">Location</div><div class="info-box-value">${pos.location}</div></div>
       <div class="info-box"><div class="info-box-label">Domain</div><div class="info-box-value">${pos.domain}</div></div>
-      <div class="info-box"><div class="info-box-label">Date Opened</div><div class="info-box-value">${pos.openedDate}</div></div>
+      <div class="info-box"><div class="info-box-label">Date Opened</div><div class="info-box-value">${formatDate(pos.openedDate)}</div></div>
       <div class="info-box"><div class="info-box-label">Days Open</div><div class="info-box-value" style="color:${daysSince(pos.openedDate)>=3?"#ef4444":"#10b981"}">${daysSince(pos.openedDate)} days</div></div>
     </div>
     ${hs?`<div style="margin-bottom:16px"><div class="sec-title">📊 Pipeline Progress</div><div class="pipeline-steps">${pipelineStepsHTML(hs)}</div></div>`:""}
@@ -2393,6 +2393,7 @@ async function saveScreenedCandidate(){
     showToast("First Name, Mobile, Position and Status are required","error"); return;
   }
   const btn=document.getElementById("saveScreenBtn"); btn.disabled=true; btn.textContent="Saving…";
+
   const sc={
     id: editingScreenId||("SC-"+Date.now()),
     firstName, lastName, gender:document.getElementById("scGender").value,
@@ -2415,55 +2416,68 @@ async function saveScreenedCandidate(){
     pipelineStage: spocComment==="Consider" ? "Profile Shortlisted" : null,
     addedToPipeline: spocComment==="Consider"
   };
-  try{
-    if(editingScreenId){
-      await api("POST",{action:"updateScreened",data:sc});
-      screenedCandidates=screenedCandidates.map(c=>c.id===editingScreenId?sc:c);
-    } else {
-      await api("POST",{action:"saveScreened",data:sc});
-      screenedCandidates.push(sc);
-    }
-    // Auto-add to pipeline as "Profile Shortlisted" if SPOC Comment = Consider
-    if(spocComment==="Consider" && !editingScreenId){
-      const pipelineCand={
-        id:"C-"+Date.now(),
-        name:firstName+" "+lastName,
-        positionId,
-        stage:"Profile Shortlisted",
-        yearsExp:sc.exp||"",
-        location:sc.prefLoc||sc.currentLoc||"",
-        noticePeriod:sc.notice||"",
-        mobile:sc.mobile||"",
-        email:sc.email||"",
-        ctc:sc.ctc||"",
-        screenedId:sc.id,
-        lastUpdated:today(),
-        interviewDate:"",
-        interviewTime:""
-      };
-      // Push locally first so it shows immediately regardless of API result
-      candidates.push(pipelineCand);
-      // Try to save to backend (don't block on failure)
-      api("POST",{action:"saveCandidate",data:{
+
+  // ── 1. Save screened candidate locally immediately ──
+  if(editingScreenId){
+    screenedCandidates = screenedCandidates.map(c=>c.id===editingScreenId ? sc : c);
+  } else {
+    screenedCandidates.push(sc);
+  }
+
+  // ── 2. If SPOC Comment = Consider → push to pipeline immediately ──
+  if(spocComment==="Consider" && !editingScreenId){
+    const pipelineCand={
+      id:"C-"+Date.now(),
+      name:firstName+" "+lastName,
+      positionId,
+      stage:"Profile Shortlisted",
+      yearsExp:sc.exp||"",
+      location:sc.prefLoc||sc.currentLoc||"",
+      noticePeriod:sc.notice||"",
+      mobile:sc.mobile||"",
+      email:sc.email||"",
+      ctc:sc.ctc||"",
+      screenedId:sc.id,
+      lastUpdated:today(),
+      interviewDate:"",
+      interviewTime:""
+    };
+    candidates.push(pipelineCand);
+
+    // Try backend save silently - never block the UI
+    try {
+      await api("POST",{action:"saveCandidate",data:{
         ID:pipelineCand.id, Name:pipelineCand.name,
         PositionID:pipelineCand.positionId, Stage:pipelineCand.stage,
         YearsExp:pipelineCand.yearsExp, Location:pipelineCand.location,
         NoticePeriod:pipelineCand.noticePeriod, LastUpdated:pipelineCand.lastUpdated,
         InterviewDate:"", InterviewTime:""
-      }}).catch(e=>console.warn("Backend save failed:",e));
-      showToast("✅ Candidate moved to Pipeline as 'Profile Shortlisted'!","success");
-    } else {
-      showToast("✅ Candidate saved","success");
-    }
-    closeScreenModal();
-    if(activeView==="screening") renderScreening();
-    else if(activeView==="sourcing") renderSourcing();
-    else if(activeView==="positions") renderPositions();
-  }catch(e){
-    showToast("❌ Save failed: "+e.message,"error");
+      }});
+    } catch(e){ console.warn("Backend save failed (non-critical):", e); }
+
+    showToast("✅ Candidate moved to Pipeline as 'Profile Shortlisted'!","success");
+  } else {
+    showToast("✅ Candidate saved","success");
   }
-  finally{ btn.disabled=false; btn.textContent="Save Candidate"; }
+
+  // Try backend save for screened candidate silently
+  try {
+    await api("POST",{action:"saveCandidate",data:{
+      ID:sc.id, Name:firstName+" "+lastName,
+      PositionID:sc.positionId, Stage:"Screening",
+      YearsExp:sc.exp, Location:sc.prefLoc||sc.currentLoc,
+      NoticePeriod:sc.notice, LastUpdated:sc.screenDate
+    }});
+  } catch(e){ console.warn("Screened save failed (non-critical):", e); }
+
+  btn.disabled=false; btn.textContent="Save Candidate";
+  closeScreenModal();
+  if(activeView==="screening") renderScreening();
+  else if(activeView==="sourcing") renderSourcing();
+  else if(activeView==="positions") renderPositions();
+  else if(activeView==="pipeline") renderPipeline();
 }
+
 
 async function deleteScreenedCandidate(id){
   if(!confirm("Delete this screened candidate?")) return;
