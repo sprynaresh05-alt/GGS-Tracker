@@ -178,8 +178,8 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
 .notif-days{font-size:10.5px;color:var(--danger);font-weight:700;margin-top:2px}
 
 /* ── PIPELINE TAB ── */
-.pipeline-stage-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-.pipeline-stage-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .2s}
+.pipeline-stage-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.pipeline-stage-tab{padding:5px 12px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .2s;white-space:nowrap}
 .pipeline-stage-tab.active{color:#fff}
 .pipeline-summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:16px}
 .pipeline-summary-card{background:#fff;border-radius:10px;padding:12px 14px;border:1px solid var(--border);text-align:center}
@@ -1379,9 +1379,18 @@ function renderPipeline(){
   document.getElementById("mainContent").innerHTML=`
     <!-- Summary cards -->
     <div class="pipeline-summary-row">
-      ${ACTIVE_STAGES.map(s=>`<div class="pipeline-summary-card" style="border-top:3px solid ${STAGE_STYLE[s].dot};cursor:pointer" onclick="setPipelineFilter('${s}')">
-        <div class="pipeline-summary-val" style="color:${STAGE_STYLE[s].dot}">${counts[s]}</div>
-        <div class="pipeline-summary-label">${s.split(" ")[0]}</div>
+      ${[
+        {s:"Profile Shortlisted", label:"Shortlisted"},
+        {s:"Profile Shared",      label:"Shared"},
+        {s:"Screen Rejected",     label:"Rejected"},
+        {s:"L1 Scheduled",        label:"L1"},
+        {s:"L2 Scheduled",        label:"L2"},
+        {s:"Offer Extended",      label:"Offer"},
+        {s:"Offer Released",      label:"Released"},
+        {s:"Onboarded",           label:"Onboarded"},
+      ].map(({s,label})=>`<div class="pipeline-summary-card" style="border-top:3px solid ${STAGE_STYLE[s].dot};cursor:pointer" onclick="setPipelineFilter('${s}')">
+        <div class="pipeline-summary-val" style="color:${STAGE_STYLE[s].dot}">${counts[s]||0}</div>
+        <div class="pipeline-summary-label">${label}</div>
       </div>`).join("")}
     </div>
     <!-- Stage filter tabs -->
@@ -2417,16 +2426,32 @@ async function saveScreenedCandidate(){
     // Auto-add to pipeline as "Profile Shortlisted" if SPOC Comment = Consider
     if(spocComment==="Consider" && !editingScreenId){
       const pipelineCand={
-        id:"C-"+Date.now(), name:firstName+" "+lastName,
-        positionId, stage:"Profile Shortlisted",
-        mobile, email:sc.email, exp:sc.exp, ctc:sc.ctc,
-        notice:sc.notice, prefLoc:sc.prefLoc,
-        screenedId:sc.id, addedDate:today(),
-        interviewDate:"", interviewTime:""
+        id:"C-"+Date.now(),
+        name:firstName+" "+lastName,
+        positionId,
+        stage:"Profile Shortlisted",
+        yearsExp:sc.exp||"",
+        location:sc.prefLoc||sc.currentLoc||"",
+        noticePeriod:sc.notice||"",
+        mobile:sc.mobile||"",
+        email:sc.email||"",
+        ctc:sc.ctc||"",
+        screenedId:sc.id,
+        lastUpdated:today(),
+        interviewDate:"",
+        interviewTime:""
       };
-      await api("POST",{action:"saveCandidate",data:pipelineCand});
+      // Push locally first so it shows immediately regardless of API result
       candidates.push(pipelineCand);
-      showToast("✅ Candidate saved & auto-moved to Pipeline as 'Profile Shortlisted'!","success");
+      // Try to save to backend (don't block on failure)
+      api("POST",{action:"saveCandidate",data:{
+        ID:pipelineCand.id, Name:pipelineCand.name,
+        PositionID:pipelineCand.positionId, Stage:pipelineCand.stage,
+        YearsExp:pipelineCand.yearsExp, Location:pipelineCand.location,
+        NoticePeriod:pipelineCand.noticePeriod, LastUpdated:pipelineCand.lastUpdated,
+        InterviewDate:"", InterviewTime:""
+      }}).catch(e=>console.warn("Backend save failed:",e));
+      showToast("✅ Candidate moved to Pipeline as 'Profile Shortlisted'!","success");
     } else {
       showToast("✅ Candidate saved","success");
     }
