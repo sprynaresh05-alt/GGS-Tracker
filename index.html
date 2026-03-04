@@ -841,7 +841,7 @@ tr.stale-row td:first-child{border-left:3px solid var(--danger)}
 // ═══════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrRKuubyOyLD8ooLjZt4YR_ai9hrpAA951PMurYHEtXmTzuy3kny_SSrDxVGTWtqyh/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydZWYwRlMM6RTFV4dR9gPifvwCYjsfXlix2YOzplLnwp5VpozFe5ih2iBzTOB2gJM1/exec";
 
 const STAGES = ["Profile Shortlisted","Profile Shared","Screen Rejected","L1 Scheduled","L1 Rejected","L2 Scheduled","L2 Rejected","Hold","Offer Extended","Offer Released","Onboarded","Dropped"];
 const ACTIVE_STAGES = ["Profile Shortlisted","Profile Shared","L1 Scheduled","L2 Scheduled","Offer Extended","Offer Released","Onboarded"];
@@ -1399,7 +1399,9 @@ function closeJD(){ document.getElementById("jdModal").style.display="none"; }
 function renderPipeline(){
   // Summary counts
   const counts={};STAGES.forEach(s=>counts[s]=0);candidates.forEach(c=>{if(counts[c.stage]!==undefined)counts[c.stage]++;});
-  const filtered = pipelineStageFilter==="All" ? candidates : candidates.filter(c=>c.stage===pipelineStageFilter);
+  // Profile Shortlisted is hidden from Pipeline tab (visible in Positions tab only)
+  const pipelineVisible = candidates.filter(c=>c.stage!=="Profile Shortlisted");
+  const filtered = pipelineStageFilter==="All" ? pipelineVisible : pipelineVisible.filter(c=>c.stage===pipelineStageFilter);
 
   document.getElementById("mainContent").innerHTML=`
     <!-- Summary cards -->
@@ -1421,7 +1423,7 @@ function renderPipeline(){
     <!-- Stage filter tabs -->
     <div class="pipeline-stage-tabs">
       <div class="pipeline-stage-tab ${pipelineStageFilter==="All"?"active":""}" style="${pipelineStageFilter==="All"?"background:var(--navy);color:#fff":""}" onclick="setPipelineFilter('All')">All Candidates</div>
-      ${STAGES.map(s=>`<div class="pipeline-stage-tab ${pipelineStageFilter===s?"active":""}" style="${pipelineStageFilter===s?`background:${STAGE_STYLE[s].dot}`:""};color:${pipelineStageFilter===s?"#fff":STAGE_STYLE[s].dot};border-color:${STAGE_STYLE[s].dot}" onclick="setPipelineFilter('${s}')">${s} (${counts[s]})</div>`).join("")}
+      ${STAGES.filter(s=>s!=="Profile Shortlisted").map(s=>`<div class="pipeline-stage-tab ${pipelineStageFilter===s?"active":""}" style="${pipelineStageFilter===s?`background:${STAGE_STYLE[s].dot}`:""};color:${pipelineStageFilter===s?"#fff":STAGE_STYLE[s].dot};border-color:${STAGE_STYLE[s].dot}" onclick="setPipelineFilter('${s}')">${s} (${counts[s]})</div>`).join("")}
     </div>
     <!-- Table -->
     <div class="section-card">
@@ -2408,99 +2410,108 @@ function onSPOCCommentChange(){
 }
 
 async function saveScreenedCandidate(){
-  const firstName=document.getElementById("scFirstName").value.trim();
-  const lastName=document.getElementById("scLastName").value.trim();
-  const mobile=document.getElementById("scMobile").value.trim();
-  const positionId=document.getElementById("scBeelineId").value;
-  const status=document.getElementById("scStatus").value;
-  const spocComment=document.getElementById("scSPOCComment").value;
-  if(!firstName||!mobile||!positionId||!status){
-    showToast("First Name, Mobile, Position and Status are required","error"); return;
-  }
-  const btn=document.getElementById("saveScreenBtn"); btn.disabled=true; btn.textContent="Saving…";
+  const firstName = document.getElementById("scFirstName").value.trim();
+  const lastName  = document.getElementById("scLastName").value.trim();
+  const mobile    = document.getElementById("scMobile").value.trim();
+  const positionId= document.getElementById("scBeelineId").value;
+  const status    = document.getElementById("scStatus").value;
+  const spocComment = document.getElementById("scSPOCComment").value;
 
-  const sc={
-    id: editingScreenId||("SC-"+Date.now()),
-    firstName, lastName, gender:document.getElementById("scGender").value,
-    mobile, email:document.getElementById("scEmail").value.trim(),
-    currentLoc:document.getElementById("scCurrentLoc").value.trim(),
-    workLoc:document.getElementById("scWorkLoc").value.trim(),
-    exp:document.getElementById("scExp").value.trim(),
-    ctc:document.getElementById("scCTC").value.trim(),
-    takeHome:document.getElementById("scTakeHome").value.trim(),
-    expCTC:document.getElementById("scExpCTC").value.trim(),
-    notice:document.getElementById("scNotice").value.trim(),
-    comm:document.getElementById("scComm").value,
-    prefLoc:document.getElementById("scPrefLoc").value,
-    positionId, batch:document.getElementById("scBatch").value,
-    beelineDetails:document.getElementById("scBeelineDetails").value.trim(),
-    status, screenDate:document.getElementById("scDate").value||today(),
-    feedback:document.getElementById("scFeedback").value.trim(),
+  if(!firstName || !mobile || !positionId || !status){
+    showToast("First Name, Mobile, Position and Status are required","error");
+    return;
+  }
+
+  const btn = document.getElementById("saveScreenBtn");
+  btn.disabled = true;
+  btn.textContent = "Saving…";
+
+  // ── Build screened candidate object ──
+  const sc = {
+    id:           editingScreenId || ("SC-"+Date.now()),
+    firstName,    lastName,
+    gender:       document.getElementById("scGender").value,
+    mobile,       email:    document.getElementById("scEmail").value.trim(),
+    currentLoc:   document.getElementById("scCurrentLoc").value.trim(),
+    workLoc:      document.getElementById("scWorkLoc").value.trim(),
+    exp:          document.getElementById("scExp").value.trim(),
+    ctc:          document.getElementById("scCTC").value.trim(),
+    takeHome:     document.getElementById("scTakeHome").value.trim(),
+    expCTC:       document.getElementById("scExpCTC").value.trim(),
+    notice:       document.getElementById("scNotice").value.trim(),
+    comm:         document.getElementById("scComm").value,
+    prefLoc:      document.getElementById("scPrefLoc").value,
+    positionId,   batch:    document.getElementById("scBatch").value,
+    beelineDetails: document.getElementById("scBeelineDetails").value.trim(),
+    status,       screenDate: document.getElementById("scDate").value || today(),
+    feedback:     document.getElementById("scFeedback").value.trim(),
     spocComment,
-    remarks:document.getElementById("scRemarks").value.trim(),
-    pipelineStage: spocComment==="Consider" ? "Profile Shortlisted" : null,
-    addedToPipeline: spocComment==="Consider"
+    remarks:      document.getElementById("scRemarks").value.trim(),
+    addedToPipeline: spocComment === "Consider"
   };
 
-  // ── 1. Save screened candidate locally immediately ──
+  // ── STEP 1: Save to screenedCandidates array locally ──
   if(editingScreenId){
-    screenedCandidates = screenedCandidates.map(c=>c.id===editingScreenId ? sc : c);
+    screenedCandidates = screenedCandidates.map(c => c.id===editingScreenId ? sc : c);
   } else {
     screenedCandidates.push(sc);
   }
 
-  // ── 2. If SPOC Comment = Consider → push to pipeline immediately ──
-  if(spocComment==="Consider" && !editingScreenId){
-    const pipelineCand={
-      id:"C-"+Date.now(),
-      name:firstName+" "+lastName,
-      positionId,
-      stage:"Profile Shortlisted",
-      yearsExp:sc.exp||"",
-      location:sc.prefLoc||sc.currentLoc||"",
-      noticePeriod:sc.notice||"",
-      mobile:sc.mobile||"",
-      email:sc.email||"",
-      ctc:sc.ctc||"",
-      screenedId:sc.id,
-      lastUpdated:today(),
+  // ── STEP 2: If Consider → build pipeline candidate and push immediately ──
+  if(spocComment === "Consider" && !editingScreenId){
+    const pid = "C-" + Date.now();
+    const pipelineCand = {
+      id:           pid,
+      name:         firstName + " " + lastName,
+      positionId:   positionId,
+      stage:        "Profile Shared",       // first real pipeline stage
+      yearsExp:     sc.exp      || "",
+      location:     sc.prefLoc  || sc.currentLoc || "",
+      noticePeriod: sc.notice   || "",
+      mobile:       sc.mobile   || "",
+      email:        sc.email    || "",
+      ctc:          sc.ctc      || "",
+      screenedId:   sc.id,
+      lastUpdated:  today(),
       interviewDate:"",
       interviewTime:""
     };
+
+    // Push to local candidates array FIRST (instant UI update)
     candidates.push(pipelineCand);
 
-    // Try backend save silently - never block the UI
-    try {
-      await api("POST",{action:"saveCandidate",data:{
-        ID:pipelineCand.id, Name:pipelineCand.name,
-        PositionID:pipelineCand.positionId, Stage:pipelineCand.stage,
-        YearsExp:pipelineCand.yearsExp, Location:pipelineCand.location,
-        NoticePeriod:pipelineCand.noticePeriod, LastUpdated:pipelineCand.lastUpdated,
-        InterviewDate:"", InterviewTime:""
-      }});
-    } catch(e){ console.warn("Backend save failed (non-critical):", e); }
+    // Save to Google Sheet (one call, correct Stage)
+    api("POST", {
+      action: "saveCandidate",
+      data: {
+        ID:           pipelineCand.id,
+        Name:         pipelineCand.name,
+        PositionID:   pipelineCand.positionId,
+        Stage:        pipelineCand.stage,
+        YearsExp:     pipelineCand.yearsExp,
+        Location:     pipelineCand.location,
+        NoticePeriod: pipelineCand.noticePeriod,
+        LastUpdated:  pipelineCand.lastUpdated,
+        InterviewDate:"",
+        InterviewTime:""
+      }
+    }).catch(e => console.warn("Sheet save failed:", e));
 
-    showToast("✅ Candidate moved to Pipeline as 'Profile Shortlisted'!","success");
+    showToast("✅ Candidate added to Pipeline!", "success");
   } else {
-    showToast("✅ Candidate saved","success");
+    showToast("✅ Candidate saved", "success");
   }
 
-  // Try backend save for screened candidate silently
-  try {
-    await api("POST",{action:"saveCandidate",data:{
-      ID:sc.id, Name:firstName+" "+lastName,
-      PositionID:sc.positionId, Stage:"Screening",
-      YearsExp:sc.exp, Location:sc.prefLoc||sc.currentLoc,
-      NoticePeriod:sc.notice, LastUpdated:sc.screenDate
-    }});
-  } catch(e){ console.warn("Screened save failed (non-critical):", e); }
+  btn.disabled = false;
+  btn.textContent = "Save Candidate";
 
-  btn.disabled=false; btn.textContent="Save Candidate";
   closeScreenModal();
-  if(activeView==="screening") renderScreening();
-  else if(activeView==="sourcing") renderSourcing();
-  else if(activeView==="positions") renderPositions();
-  else if(activeView==="pipeline") renderPipeline();
+
+  // Refresh whichever tab is active
+  if     (activeView === "screening") renderScreening();
+  else if(activeView === "sourcing")  renderSourcing();
+  else if(activeView === "pipeline")  renderPipeline();
+  else if(activeView === "positions") renderPositions();
 }
 
 
