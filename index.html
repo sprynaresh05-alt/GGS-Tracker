@@ -1071,8 +1071,32 @@ function applyData(data){
 }
 
 function normalizePos(p){ return { id:v(p,"ID"), manager:v(p,"Manager"), spoc:v(p,"SPOC"), skillSet:v(p,"SkillSet"), location:v(p,"Location"), domain:v(p,"Domain"), openedDate:v(p,"OpenedDate"), status:v(p,"Status")||"Open", jd:v(p,"JD") }; }
-function normalizeCand(c){ return { id:v(c,"ID"), positionId:v(c,"PositionID"), name:v(c,"Name"), yearsExp:v(c,"YearsExp"), location:v(c,"Location"), noticePeriod:v(c,"NoticePeriod"), stage:v(c,"Stage")||"Profiles Shared", lastUpdated:v(c,"LastUpdated"), interviewDate:v(c,"InterviewDate"), interviewTime:v(c,"InterviewTime") }; }
-function normalizeEmp(e){ return { id:v(e,"ID"), name:v(e,"Name"), ggsEmpId:v(e,"GGSEmpId"), phone:v(e,"Phone"), personalEmail:v(e,"PersonalEmail"), ggsEmail:v(e,"GGSEmail"), doj:v(e,"DOJ"), skillSet:v(e,"SkillSet"), spoc:v(e,"SPOC"), team:v(e,"Team"), hmName:v(e,"HMName"), catEmail:v(e,"CATEmail"), hmPhone:v(e,"HMPhone"), hmEmail:v(e,"HMEmail"), billRate:v(e,"BillRate"), dojInCat:v(e,"DOJinCAT"), yearsInCat:v(e,"YearsInCAT"), status:v(e,"Status")||"Active", resignDate:v(e,"ResignDate"), relievingDate:v(e,"RelievingDate"), positionId:v(e,"PositionID") }; }
+function normalizeCand(c){ return {
+  id:v(c,"ID"), positionId:v(c,"PositionID"), name:v(c,"Name"),
+  yearsExp:v(c,"YearsExp"), location:v(c,"Location"), noticePeriod:v(c,"NoticePeriod"),
+  stage:v(c,"Stage")||"Profile Shortlisted", lastUpdated:v(c,"LastUpdated"),
+  interviewDate:v(c,"InterviewDate"), interviewTime:v(c,"InterviewTime"),
+  mobile:v(c,"Mobile"), email:v(c,"Email"), ctc:v(c,"CTC"), screenedId:v(c,"ScreenedId")
+}; }
+function normalizeEmp(e){ return {
+  id:v(e,"ID"), empCode:v(e,"EmpCode"), name:v(e,"Name"), designation:v(e,"Designation"), domain:v(e,"Domain"),
+  ggsDOJ:v(e,"GGS_IS_DOJ"), dojISES:v(e,"DOJ_IS_ES"), expMonths:v(e,"ExpMonths"), totalYrsGGS:v(e,"TotalYrsGGS"),
+  baseLoc:v(e,"BaseLoc"), currentLoc:v(e,"CurrentLoc"), assignment:v(e,"Assignment"),
+  empFor:v(e,"For"), account:v(e,"Account"), hrPOC:v(e,"HRPOC"),
+  supOnsite:v(e,"SupOnsite"), supOffsite:v(e,"SupOffsite"), status:v(e,"Status")||"Active", poc:v(e,"POC"),
+  dob:v(e,"DOB"), age:v(e,"Age"), gender:v(e,"Gender"), marital:v(e,"Marital"),
+  blood:v(e,"Blood"), tshirt:v(e,"TShirt"), nationality:v(e,"Nationality"), education:v(e,"Education"),
+  fatherName:v(e,"FatherName"), fatherOcc:v(e,"FatherOcc"), motherOcc:v(e,"MotherOcc"),
+  guardianName:v(e,"GuardianName"), guardianOcc:v(e,"GuardianOcc"),
+  contact:v(e,"Contact"), personalEmail:v(e,"PersonalEmail"), ggsEmail:v(e,"GGSEmail"),
+  presentAddr:v(e,"PresentAddr"), permanentAddr:v(e,"PermanentAddr"),
+  ec1Name:v(e,"EC1Name"), ec1Rel:v(e,"EC1Rel"), ec1Phone:v(e,"EC1Phone"),
+  ec2Name:v(e,"EC2Name"), ec2Rel:v(e,"EC2Rel"), ec2Phone:v(e,"EC2Phone"),
+  bankAcc:v(e,"BankAcc"), beneficiary:v(e,"Beneficiary"), bankName:v(e,"BankName"), ifsc:v(e,"IFSC"),
+  pan:v(e,"PAN"), aadhaar:v(e,"Aadhaar"), uan:v(e,"UAN"), insurance:v(e,"Insurance"),
+  bond:v(e,"Bond")||"NA", bondDoc:v(e,"BondDoc"), bgv:v(e,"BGV"), personalFile:v(e,"PersonalFile"),
+  remarks:v(e,"Remarks"), addedDate:v(e,"AddedDate")
+}; }
 function v(obj,key){ return obj[key]!==undefined?String(obj[key]).trim():""; }
 
 // ═══════════════════════════════════════════════════════════
@@ -1506,9 +1530,35 @@ function renderEmployees(){
     </div>`;
 }
 
+async function fixSheetHeaders(){
+  const btn = document.getElementById("fixHeadersBtn");
+  btn.disabled=true; btn.textContent="Updating…";
+  try{
+    const res = await fetch(SCRIPT_URL+"?action=fixHeaders&t="+Date.now(),{redirect:"follow"});
+    const data = await res.json();
+    showToast("✅ Sheet headers updated! "+( data.message||""),"success");
+  }catch(e){
+    // Try JSONP
+    try{
+      await jsonpFetch("fixHeaders");
+      showToast("✅ Sheet headers updated!","success");
+    }catch(e2){
+      showToast("❌ Failed: "+e2.message,"error");
+    }
+  }
+  btn.disabled=false; btn.textContent="🔧 Fix Sheet Headers";
+}
+
 function renderAdmin(){
   if(currentUser&&currentUser.Permission==="Read"){ document.getElementById("mainContent").innerHTML=`<div class="empty-state"><div class="empty-icon">🔒</div><div class="empty-text">You have Read-Only access. Admin panel is restricted.</div></div>`; return; }
   document.getElementById("mainContent").innerHTML=`
+    <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-weight:700;color:#9a3412;font-size:13px">🔧 Sheet Maintenance</div>
+        <div style="font-size:11px;color:#c2410c;margin-top:2px">Run this once after any update to fix Google Sheet column headers</div>
+      </div>
+      <button id="fixHeadersBtn" class="btn btn-primary" style="background:#ea580c;border-color:#ea580c" onclick="fixSheetHeaders()">🔧 Fix Sheet Headers</button>
+    </div>
     <div class="admin-grid">
       <!-- SPOCs -->
       <div class="admin-card">
