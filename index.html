@@ -1684,16 +1684,108 @@ async function saveCandidate(){
   finally{btn.disabled=false;btn.textContent="Add Candidate";}
 }
 
-async function updateCandStage(candId,posId,newStage){
-  if(!canWrite()){showToast("Read-only access","error");return;}
-  const cand=candidates.find(c=>c.id===candId); if(!cand)return;
-  const old=cand.stage; cand.stage=newStage; cand.lastUpdated=today();
-  renderDetailPanel(posId); updateNotifBadge();
+async function updateCandStage(candId, posId, newStage){
+  if(!canWrite()){ showToast("Read-only access","error"); return; }
+  const cand = candidates.find(c=>c.id===candId);
+  if(!cand) return;
+
+  // If moving to an interview stage, show a mini date/time picker inline
+  if(INTERVIEW_STAGES.includes(newStage)){
+    showInterviewPicker(candId, posId, newStage);
+    return;
+  }
+
+  const old = cand.stage;
+  cand.stage = newStage;
+  cand.lastUpdated = today();
+
+  // Refresh position detail AND pipeline pills immediately
+  renderDetailPanel(posId);
+  if(activeView==="pipeline") renderPipeline();
+  updateNotifBadge();
+
   try{
-    await api("POST",{action:"updateCandidate",data:{...cand,user:currentUser?.Name}});
+    await api("POST",{action:"updateCandidate", data:{
+      id:cand.id, positionId:cand.positionId, name:cand.name,
+      stage:newStage, yearsExp:cand.yearsExp, location:cand.location,
+      noticePeriod:cand.noticePeriod, lastUpdated:cand.lastUpdated,
+      interviewDate:cand.interviewDate||"", interviewTime:cand.interviewTime||"",
+      mobile:cand.mobile||"", email:cand.email||"", ctc:cand.ctc||"",
+      user:currentUser?.Name
+    }});
     showToast(`✅ ${cand.name} → ${newStage}`,"success");
     if(newStage==="Onboarded") promptCreateEmployee(cand);
-  }catch(e){cand.stage=old;renderDetailPanel(posId);showToast("❌ Update failed","error");}
+  } catch(e){
+    cand.stage = old;
+    renderDetailPanel(posId);
+    showToast("❌ Update failed","error");
+  }
+}
+
+function showInterviewPicker(candId, posId, newStage){
+  // Remove any existing picker
+  const existing = document.getElementById("interviewPickerOverlay");
+  if(existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "interviewPickerOverlay";
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center";
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:28px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+      <div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:4px">📅 Schedule Interview</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Setting stage to <strong>${newStage}</strong></div>
+      <div class="form-row" style="margin-bottom:14px">
+        <div class="form-group">
+          <label class="form-label">Interview Date *</label>
+          <input type="date" class="form-input" id="ipDate" value="${today()}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Interview Time</label>
+          <input type="time" class="form-input" id="ipTime"/>
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top:8px">
+        <button class="btn btn-ghost" onclick="document.getElementById('interviewPickerOverlay').remove();renderDetailPanel('${posId}')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmInterviewStage('${candId}','${posId}','${newStage}')">Confirm</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function confirmInterviewStage(candId, posId, newStage){
+  const date = document.getElementById("ipDate").value;
+  const time = document.getElementById("ipTime").value;
+  if(!date){ showToast("Please select an interview date","error"); return; }
+
+  const cand = candidates.find(c=>c.id===candId);
+  if(!cand) return;
+
+  const old = cand.stage;
+  cand.stage = newStage;
+  cand.interviewDate = date;
+  cand.interviewTime = time;
+  cand.lastUpdated = today();
+
+  document.getElementById("interviewPickerOverlay").remove();
+  renderDetailPanel(posId);
+  if(activeView==="pipeline") renderPipeline();
+  updateNotifBadge();
+
+  try{
+    await api("POST",{action:"updateCandidate", data:{
+      id:cand.id, positionId:cand.positionId, name:cand.name,
+      stage:newStage, yearsExp:cand.yearsExp, location:cand.location,
+      noticePeriod:cand.noticePeriod, lastUpdated:cand.lastUpdated,
+      interviewDate:date, interviewTime:time,
+      mobile:cand.mobile||"", email:cand.email||"", ctc:cand.ctc||"",
+      user:currentUser?.Name
+    }});
+    showToast(`✅ ${cand.name} → ${newStage} on ${date}`,"success");
+  } catch(e){
+    cand.stage = old;
+    renderDetailPanel(posId);
+    showToast("❌ Update failed","error");
+  }
 }
 
 async function deleteCand(candId,posId){
@@ -2517,7 +2609,7 @@ async function saveScreenedCandidate(){
       id:           pid,
       name:         firstName + " " + lastName,
       positionId:   positionId,
-      stage:        "Profile Shared",       // first real pipeline stage
+      stage:        "Profile Shortlisted",  // SPOC Consider → Profile Shortlisted
       yearsExp:     sc.exp      || "",
       location:     sc.prefLoc  || sc.currentLoc || "",
       noticePeriod: sc.notice   || "",
